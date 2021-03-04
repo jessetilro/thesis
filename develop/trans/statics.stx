@@ -7,7 +7,24 @@ imports signatures/develop-sig
 rules // single-file entry point
 
   programOk : Start
-  programOk(_).
+  programOk(Module(id, opt, sections)) :-
+    sectionsOk(sections).
+  
+  sectionsOk maps sectionOk(list(*))
+  
+  sectionOk : ModuleSection
+  
+  sectionOk(ModelSection(models)) :-
+    modelsOk(models).
+  sectionOk(FunctionSection(_)).
+  sectionOk(DataSection(_)).
+  sectionOk(ExecuteSection(_)).
+  
+  modelsOk maps modelOk(list(*))
+  
+  modelOk : Model
+  modelOk(Entity(id, _, _, _)) :-
+    id == "Test" | error $[entity should be named Test]@id.
   
 //  programOk(start) :- {s}
 //    new s,

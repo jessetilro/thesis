@@ -1,1 +1,0 @@
-Exp(Add(String("\"string\""{TermIndex("test.dev", 1)}){TermIndex("test.dev", 2)}, String("\"string\""{TermIndex("test.dev", 3)}){TermIndex("test.dev", 4)}){TermIndex("test.dev", 5)}){TermIndex("test.dev", 6)}
