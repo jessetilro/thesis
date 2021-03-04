@@ -9,6 +9,10 @@ imports
   Model
   Types
   Modules
+  
+context-free sorts
+
+  Start
 
 context-free start-symbols
   

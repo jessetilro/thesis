@@ -3,6 +3,17 @@ module Expressions
 imports
   Common
   Types
+  
+context-free sorts
+  Exp
+  Case
+  LitVal
+  InterpolateString
+  LitString
+  
+lexical sorts
+  BuiltInFunctionOrID
+  BuiltInFunction
 
 context-free syntax // brackets
 

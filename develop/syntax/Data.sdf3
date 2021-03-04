@@ -5,6 +5,15 @@ imports
   Common
   Expressions
   Types
+  
+context-free sorts
+  Data
+  EntityInstance
+  RelationInstance
+  MemberValue
+  Value
+  EntityInstanceValue
+  IDSpace
 
 context-free syntax
 

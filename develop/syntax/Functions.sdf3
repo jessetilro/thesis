@@ -6,6 +6,10 @@ imports
   Expressions
   Types
   
+context-free sorts
+  Function
+  Parameter
+  
 context-free syntax
 
   Function.Function = <

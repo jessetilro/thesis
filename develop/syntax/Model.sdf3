@@ -6,6 +6,15 @@ imports
   Expressions
   Types
   
+context-free sorts
+  Model
+  OptionalExtends
+  Extends
+  Member
+  DotID
+  SpaceArrowID
+  SpaceMultiplicity
+  
 context-free syntax // entities
 
   Model.Entity = <

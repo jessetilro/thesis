@@ -1,5 +1,13 @@
 module Common
 
+lexical sorts
+  ID
+  Keyword
+  INT
+  FLOAT
+  STRING
+  DATETIME
+
 lexical syntax // IDs
 
   ID = [a-zA-Z\_][0-9a-zA-Z\_]*

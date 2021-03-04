@@ -3,6 +3,14 @@ module Types
 imports
 
   Common
+  
+context-free sorts
+  AnyType
+  EntityType
+  PrimitiveType
+  Multiplicity
+  MultiplicityOrdering
+  Strategy
 
 context-free syntax
 
