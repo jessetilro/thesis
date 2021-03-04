@@ -1,0 +1,55 @@
+module statics
+
+imports signatures/develop-sig
+
+// see README.md for details on how to switch to multi-file analysis
+
+rules // single-file entry point
+
+  programOk : Start
+  programOk(_).
+  
+//  programOk(start) :- {s}
+//    new s,
+//    fileOk(s, start).
+//  
+//  fileOk : scope * Start
+//
+//  fileOk(s, Empty()).
+//  fileOk(s, Exp(e)) :- {T}
+//    typeOfExp(s, e) == T.
+
+rules // multi-file entry point
+
+//  projectOk : scope
+//
+//  projectOk(s).
+//
+//  fileOk : scope * Start
+//
+//  fileOk(s, Empty()).
+  
+rules // typing
+
+//  equitype : TYPE * TYPE
+//  
+//  equitype(T, T).
+//  
+//  typeOfExp : scope * Exp -> TYPE
+//  
+//  typeOfExp(s, Int(_)) = INT().
+//  typeOfExp(s, String(_)) = STRING().
+//  
+//  typeOfExp(s, Add(e1, e2)) = INT() :- {T1 T2}
+//    typeOfExp(s, e1) == T1,
+//    typeOfExp(s, e2) == T2,
+//    equitype(T1, T2) | error $[operands should have the same type].
+
+signature
+    
+  sorts
+  	TYPE
+    
+  constructors
+  	INT : TYPE
+  	STRING : TYPE
