@@ -1,0 +1,106 @@
+module Config
+
+imports
+
+  Common
+  
+context-free sorts
+
+  Config
+  Phase
+  WebdslOption
+  UI
+  TierSplit
+  Embedded
+  BackendPhase
+  BackendTarget
+  EvalOptions
+  EvalOption
+  ResolveRuntime
+  LanguageFeature
+  DontGenerate
+  OptionBooleanValue
+
+context-free syntax
+
+  Config.JavaBackend = <
+    backend : Java
+      <Phase?>
+  >
+  
+  Phase.Generate = <phase : generate>
+  Phase.Compile  = <phase : compile>
+  Phase.Execute  = <phase : execute>
+  
+context-free syntax
+  
+  Config.WebDSLBackend = <
+    backend : WebDSL
+    <{WebdslOption "\n"}*>
+  >
+  
+  WebdslOption.UI = <ui : <UI>> 
+  UI.NoUI = <None>
+  UI.ModelExplorer = <
+    Model Explorer
+      <TierSplit?>
+  >
+  TierSplit.NoTierSplit        = <tiersplit : None>
+  TierSplit.IntraObject = <tiersplit : Object>
+
+  WebdslOption.EmbeddedOption = <embedded : <OptionBooleanValue>>
+  
+  WebdslOption.DontGenerateOption  = <dont generate <ID>.<ID> <{DontGenerate ", "}*>>
+  DontGenerate.Field         = <field>
+  DontGenerate.Expression    = <expression>
+  DontGenerate.IncomingPaths = <incoming paths>
+  
+  WebdslOption.EventualThreadsOption  = <eventual threads: <INT>>
+  WebdslOption.EventualIntervalOption = <eventual interval: <INT> ms>
+  WebdslOption.EventualBatchSizeOption = <eventual batch size: <INT>>
+  
+  WebdslOption.LogEventualUpdateOption = <log eventual update : <OptionBooleanValue>>
+  WebdslOption.LogEventualStatusOption = <log eventual status : <OptionBooleanValue>>
+  
+  OptionBooleanValue.No  = <no>
+  OptionBooleanValue.Yes = <yes>
+  
+context-free syntax
+
+  Config.JavascriptBackend = <
+    backend : Javascript
+    <BackendPhase?>
+    <BackendTarget?>
+  >
+ 
+  BackendPhase.BackendGenerate = <phase : generate>
+  BackendPhase.BackendExecute = <phase : execute>
+  BackendPhase.BackendEval = <phase: eval<EvalOptions>>
+  
+  EvalOptions.Options = <(<EvalOption*>)>
+  EvalOptions.NoOptions = <>
+  EvalOption.Overwrite = <overwrite>
+  
+  BackendTarget.JavascriptTarget = <target: javascript>
+  BackendTarget.HtmlTarget = <target: html <ResolveRuntime?>>
+  
+  ResolveRuntime.ResolveInline =     <runtime: inline>
+  ResolveRuntime.ResolveFromSource = <runtime: "<STRING>">
+  
+context-free syntax
+  
+  Config.LanguageFeatures = <
+    language features : <{LanguageFeature ", "}*>
+  >
+  
+  LanguageFeature.DerivedRelations    = <derived relations>
+  LanguageFeature.EventualCalculation = <eventual calculation>
+  LanguageFeature.FirstClassRelations = <first-class relations>
+  LanguageFeature.Inlines             = <inlines>
+  LanguageFeature.Strategies          = <strategies>
+  LanguageFeature.SubTyping           = <subtyping>
+  
+context-free syntax
+
+  Config.LogIncremental = <log incremental : <OptionBooleanValue>>
+  
