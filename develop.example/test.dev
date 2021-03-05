@@ -3,5 +3,5 @@ module test
 model
   
   entity Test {
-    test : Float = 0.0 (on-demand)
+    test : Boolean = true (on-demand)
   }

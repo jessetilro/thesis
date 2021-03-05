@@ -23,37 +23,45 @@ rules // single-file entry point
   modelsOk maps modelOk(list(*))
   
   modelOk : Model
-  modelOk(Entity(id, _, _, _)) :-
-    id == "Test" | error $[entity should be named Test]@id.
+  modelOk(Entity(id, _, _, members)) :-
+    id == "Test" | error $[entity should be named Test]@id,
+    membersOk(members).
+    
+  membersOk maps memberOk(list(*))
+  memberOk : Member
   
-//  programOk(start) :- {s}
-//    new s,
-//    fileOk(s, start).
-//  
-//  fileOk : scope * Start
-//
-//  fileOk(s, Empty()).
-//  fileOk(s, Exp(e)) :- {T}
-//    typeOfExp(s, e) == T.
-
-rules // multi-file entry point
-
-//  projectOk : scope
-//
-//  projectOk(s).
-//
-//  fileOk : scope * Start
-//
-//  fileOk(s, Empty()).
+  memberOk(DerivationAttribute(_, type, _, exp, _)) :- {s declared}
+    new s,
+    typeOfAnyType(s, type) == typeOfExp(s, exp) | error $[the expression does not have the declared type]@exp.
   
 rules // typing
 
-//  equitype : TYPE * TYPE
-//  
-//  equitype(T, T).
-//  
-//  typeOfExp : scope * Exp -> TYPE
-//  
+  equitype : TYPE * TYPE
+  
+  equitype(T, T).
+  
+  typeOfExp : scope * Exp -> TYPE
+  
+  typeOfExp(_, ExpLitVal(Int(_))) = INT().
+  typeOfExp(_, ExpLitVal(Float(_))) = FLOAT().
+  typeOfExp(_, ExpLitVal(True())) = BOOLEAN().
+  typeOfExp(_, ExpLitVal(False())) = BOOLEAN().
+  typeOfExp(_, ExpLitVal(Datetime(_))) = DATETIME().
+  
+  
+  typeOfAnyType : scope * AnyType -> TYPE
+  
+  typeOfAnyType(_, TypePrimitive(t)) = tt :-
+    tt == typeOfPrimitiveType(t).
+  
+  typeOfPrimitiveType : PrimitiveType -> TYPE
+  
+  typeOfPrimitiveType(Boolean()) = BOOLEAN().
+  typeOfPrimitiveType(Float()) = FLOAT().
+  typeOfPrimitiveType(Datetime()) = DATETIME().
+  typeOfPrimitiveType(Int()) = INT().
+  typeOfPrimitiveType(String()) = STRING().
+  
 //  typeOfExp(s, Int(_)) = INT().
 //  typeOfExp(s, String(_)) = STRING().
 //  
@@ -70,3 +78,6 @@ signature
   constructors
   	INT : TYPE
   	STRING : TYPE
+  	FLOAT : TYPE
+  	BOOLEAN : TYPE
+  	DATETIME : TYPE

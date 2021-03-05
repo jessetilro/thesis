@@ -109,7 +109,7 @@ context-free syntax // references
   
 context-free syntax // literal values
 
-  Exp                    = <<LitVal>>
+  Exp.ExpLitVal          = <<LitVal>>
   LitVal.Int             = <<INT>>
   LitVal.Float           = <<FLOAT>>
   LitVal.True            = <true>

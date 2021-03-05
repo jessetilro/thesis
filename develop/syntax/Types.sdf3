@@ -14,8 +14,8 @@ context-free sorts
 
 context-free syntax
 
-  AnyType = EntityType
-  AnyType = PrimitiveType
+  AnyType.TypeEntity = EntityType
+  AnyType.TypePrimitive = PrimitiveType
 
   EntityType.EntityType = ID
 
