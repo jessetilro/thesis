@@ -1,0 +1,20 @@
+Module(
+  "alpha"
+, None()
+, [ ModelSection(
+      [ Entity(
+          "Test"
+        , None()
+        , None()
+        , [DerivationAttribute(
+             "test"
+           , TypePrimitive(Boolean())
+           , None()
+           , ExpLitVal(False())
+           , Some(OnDemand())
+           )]
+        )
+      ]
+    )
+  ]
+)

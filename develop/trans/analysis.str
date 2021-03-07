@@ -13,11 +13,11 @@ imports
 rules // Analysis
 
   // single-file analysis
-  editor-analyze = stx-editor-analyze(pre-analyze, post-analyze|"statics", "programOk")
+//  editor-analyze = stx-editor-analyze(pre-analyze, post-analyze|"statics", "programOk")
 
   // see README.md for details on how to switch to multi-file analysis
   // multi-file analysis
-//  editor-analyze = stx-editor-analyze(pre-analyze, post-analyze|"statics", "projectOk", "fileOk")
+  editor-analyze = stx-editor-analyze(pre-analyze, post-analyze|"statics", "projectOk", "fileOk")
 
   pre-analyze  = origin-track-forced(explicate-injections-develop-Start)
   post-analyze = origin-track-forced(implicate-injections-develop-Start)

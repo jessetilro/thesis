@@ -1,0 +1,24 @@
+Library(
+  []
+, [ Scope("", "s_1-1")
+  , Scope("alpha.dev", "s_3-2")
+  , Scope("beta.dev", "d_2-2")
+  , Scope("alpha.dev", "d_8-3")
+  ]
+, [ ( Scope("", "s_1-1")
+    , Some(Scope("", "s_1-1"))
+    , [ ( Label("statics!mod")
+        , [ Scope("alpha.dev", "d_8-3")
+          , Scope("alpha.dev", "d_8-3")
+          , Scope("beta.dev", "d_2-2")
+          , Scope("alpha.dev", "d_8-3")
+          , Scope("beta.dev", "d_2-2")
+          ]
+        )
+      ]
+    )
+  , (Scope("alpha.dev", "s_3-2"), Some(Scope("alpha.dev", "s_3-2")), [])
+  , (Scope("beta.dev", "d_2-2"), Some("beta"), [])
+  , (Scope("alpha.dev", "d_8-3"), Some("alpha"), [])
+  ]
+)

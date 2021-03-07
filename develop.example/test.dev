@@ -1,7 +1,0 @@
-module test
-
-model
-  
-  entity Test {
-    test : Boolean = true (on-demand)
-  }

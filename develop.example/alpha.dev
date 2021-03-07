@@ -1,0 +1,7 @@
+module alpha
+
+model
+  
+  entity Test {
+    test : Int = 0 (on-demand)
+  }

@@ -4,50 +4,222 @@ imports signatures/develop-sig
 
 // see README.md for details on how to switch to multi-file analysis
 
-rules // single-file entry point
-
-  programOk : Start
-  programOk(Module(id, opt, sections)) :-
-    sectionsOk(sections).
-  
-  sectionsOk maps sectionOk(list(*))
-  
-  sectionOk : ModuleSection
-  
-  sectionOk(ModelSection(models)) :-
-    modelsOk(models).
-  sectionOk(FunctionSection(_)).
-  sectionOk(DataSection(_)).
-  sectionOk(ExecuteSection(_)).
-  
-  modelsOk maps modelOk(list(*))
-  
-  modelOk : Model
-  modelOk(Entity(id, _, _, members)) :-
-    id == "Test" | error $[entity should be named Test]@id,
-    membersOk(members).
+signature
     
-  membersOk maps memberOk(list(*))
-  memberOk : Member
+  sorts
+    TYPE
+    MULT
+    MULTU
+    STRAT
+    RICHTYPE
+    DERIV
+    
+  constructors
+    INT : TYPE
+    STRING : TYPE
+    FLOAT : TYPE
+    BOOLEAN : TYPE
+    DATETIME : TYPE
+    NOVALUE : TYPE
+    ENTITY : ID -> TYPE
+    
+    ONE : MULT
+    ZERO_ONE : MULT
+    ONE_MORE : MULT
+    ZERO_MORE : MULT
+    ZERO_MORE_ORD : MULT
+    ONE_MORE_ORD : MULT
+    
+    UONE : MULTU
+    UMANY : MULTU
+    
+    ONDEMAND : STRAT
+    INCREMENTAL : STRAT
+    EVENTUAL : STRAT
+    ONDEMAND_INCREMENTAL : STRAT
+    ONDEMAND_EVENTUAL : STRAT
+    
+    RICHTYPE : TYPE * MULT * STRAT -> RICHTYPE
+    
+    NORMAL : DERIV
+    ABSTRACT : DERIV
+    DERIVATION : DERIV
+    DEFAULT_VALUE : DERIV
+
+  relations
   
-  memberOk(DerivationAttribute(_, type, _, exp, _)) :- {s declared}
-    new s,
+  name-resolution
+    labels 
+      // D // definition
+      I // import
+      J // lower priority import
+      P // parent
+      S // requires a J to be wellformed
+      // N // no edge at all (used for inverse querying)
+
+rules // multi-file entry points
+
+  projectOk : scope
+  projectOk(s).
+  
+  fileOk : scope * Start
+  fileOk(s, m@Module(id, opt, sections)) :-
+    sectionsOk(s, sections).
+  
+rules // module sections
+
+  sectionsOk maps sectionOk(*, list(*))
+  sectionOk : scope * ModuleSection
+  
+  sectionOk(s, ModelSection(models)) :-
+    modelsOk(s, models).
+  sectionOk(s, FunctionSection(_)).
+  sectionOk(s, DataSection(_)).
+  sectionOk(s, ExecuteSection(_)).
+  
+rules // models
+  
+  modelsOk maps modelOk(*, list(*))
+  
+  modelOk : scope * Model
+  modelOk(s, Entity(id, _, _, members)) :-
+    membersOk(s, members).
+    
+  membersOk maps memberOk(*, list(*))
+  memberOk : scope * Member
+  
+  memberOk(s, DerivationAttribute(_, type, _, exp, _)) :- {declared}
     typeOfAnyType(s, type) == typeOfExp(s, exp) | error $[the expression does not have the declared type]@exp.
   
-rules // typing
+rules // type utils
 
   equitype : TYPE * TYPE
   
   equitype(T, T).
   
+  subtype : TYPE * TYPE
+  
+  subtype(T1, T2) :- equitype(T1, T2).
+  subtype(NOVALUE(), _).
+  
+  multupper : MULT -> MULTU
+  multupper(ZERO_ONE()) = UONE().
+  multupper(ONE()) = UONE().
+  multupper(ZERO_MORE()) = UMANY().
+  multupper(ONE_MORE()) = UMANY().
+  multupper(ZERO_MORE_ORD()) = UMANY().
+  multupper(ONE_MORE_ORD()) = UMANY().
+  
+  cast : TYPE * TYPE
+  cast(INT(), FLOAT()).
+  cast(INT(), NOVALUE()).
+  cast(FLOAT(), INT()).
+  cast(FLOAT(), NOVALUE()).
+  cast(STRING(), INT()).
+  cast(STRING(), FLOAT()).
+  cast(STRING(), BOOLEAN()).
+  cast(STRING(), DATETIME()).
+  cast(STRING(), NOVALUE()).
+  cast(STRING(), STRING()).
+  
+rules // multiplicity/ordering lattice
+
+  //                 TZeroOrMore()
+  //                  /    \
+  // ZeroOrMoreOrdered()  TOneOrMore()
+  //             /    \    /
+  //  TZeroOrOne()  TOneOrMoreOrdered()
+  //             \    /
+  //             TOne()
+  
+  compatMult : MULT * MULT
+  compatMult(ONE(), ZERO_ONE()).
+  compatMult(ONE(), ONE_MORE_ORD()).
+  compatMult(ZERO_ONE(), ZERO_MORE_ORD()).
+  compatMult(ONE_MORE_ORD(), ZERO_MORE_ORD()).
+  compatMult(ONE_MORE_ORD(), ONE_MORE()).
+  compatMult(ZERO_MORE_ORD(), ZERO_MORE()).
+  compatMult(ONE_MORE(), ZERO_MORE()).
+  
+rules // strategy lattice
+
+  //         TOnDemandEventual()
+  //              /      \
+  //      TEventual()   TOnDemand()
+  //              \      /
+  //       TOnDemandIncremental()
+  //                 |
+  //            TIncremental()
+  
+  compatStrat : STRAT * STRAT
+  compatStrat(INCREMENTAL(), ONDEMAND_INCREMENTAL()).
+  compatStrat(ONDEMAND_INCREMENTAL(), EVENTUAL()).
+  compatStrat(ONDEMAND_INCREMENTAL(), ONDEMAND()).
+  compatStrat(ONDEMAND(), ONDEMAND_EVENTUAL()).
+  compatStrat(EVENTUAL(), ONDEMAND_EVENTUAL()).
+  
+rules // derivation type lattice
+
+  //       Abstract()
+  //        /      \ 
+  //  Normal()    Derivation()
+  //        \      /
+  //     DefaultValue()
+  
+  compatDeriv : DERIV * DERIV
+  compatDeriv(DEFAULT_VALUE(), NORMAL()).
+  compatDeriv(DEFAULT_VALUE(), DERIVATION()).
+  compatDeriv(NORMAL(), ABSTRACT()).
+  compatDeriv(DERIVATION(), ABSTRACT()).
+  
+rules // type tests (maybe this should become a sort like in nabl2?)
+
+  isNumeric : TYPE
+  isNumeric(INT()).
+  isNumeric(FLOAT()).
+  isNumeric(NOVALUE()).
+  
+  isString : TYPE
+  isString(STRING()).
+  isString(NOVALUE()).
+  
+  isBoolean : TYPE
+  isBoolean(BOOLEAN()).
+  isBoolean(NOVALUE()).
+  
+  canCompare : TYPE
+  canCompare(DATETIME()).
+  canCompare(FLOAT()).
+  canCompare(INT()).
+  canCompare(STRING()).
+  canCompare(NOVALUE()).
+  
+  canCompare2 : TYPE
+  canCompare2(DATETIME()).
+  canCompare2(FLOAT()).
+  canCompare2(INT()).
+  canCompare2(NOVALUE()).
+  
+  canAdd : TYPE
+  canAdd(FLOAT()).
+  canAdd(INT()).
+  canAdd(STRING()).
+  canAdd(NOVALUE()).
+  
+  canDivide : TYPE
+  canDivide(FLOAT()).
+  canDivide(INT()).
+  canDivide(NOVALUE()).
+  
+rules // typing
+  
   typeOfExp : scope * Exp -> TYPE
   
-  typeOfExp(_, ExpLitVal(Int(_))) = INT().
-  typeOfExp(_, ExpLitVal(Float(_))) = FLOAT().
-  typeOfExp(_, ExpLitVal(True())) = BOOLEAN().
-  typeOfExp(_, ExpLitVal(False())) = BOOLEAN().
-  typeOfExp(_, ExpLitVal(Datetime(_))) = DATETIME().
-  
+  typeOfExp(_, Literal(Int(_))) = INT().
+  typeOfExp(_, Literal(Float(_))) = FLOAT().
+  typeOfExp(_, Literal(True())) = BOOLEAN().
+  typeOfExp(_, Literal(False())) = BOOLEAN().
+  typeOfExp(_, Literal(Datetime(_))) = DATETIME().
   
   typeOfAnyType : scope * AnyType -> TYPE
   
@@ -69,15 +241,3 @@ rules // typing
 //    typeOfExp(s, e1) == T1,
 //    typeOfExp(s, e2) == T2,
 //    equitype(T1, T2) | error $[operands should have the same type].
-
-signature
-    
-  sorts
-  	TYPE
-    
-  constructors
-  	INT : TYPE
-  	STRING : TYPE
-  	FLOAT : TYPE
-  	BOOLEAN : TYPE
-  	DATETIME : TYPE
