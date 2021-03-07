@@ -2,8 +2,6 @@ module statics
 
 imports signatures/develop-sig
 
-// see README.md for details on how to switch to multi-file analysis
-
 signature
     
   sorts
@@ -13,6 +11,7 @@ signature
     STRAT
     RICHTYPE
     DERIV
+    ZERONESS
     
   constructors
     INT : TYPE
@@ -45,6 +44,9 @@ signature
     ABSTRACT : DERIV
     DERIVATION : DERIV
     DEFAULT_VALUE : DERIV
+    
+    NON_ZERO : ZERONESS
+    POSSIBLY_ZERO : ZERONESS
 
   relations
   
@@ -99,16 +101,22 @@ rules // type utils
   
   subtype : TYPE * TYPE
   
-  subtype(T1, T2) :- equitype(T1, T2).
+  subtype(T, T).
   subtype(NOVALUE(), _).
+  subtype(T1, T2) :- { X } subtype(T1, X), subtype(X, T2).
   
-  multupper : MULT -> MULTU
-  multupper(ZERO_ONE()) = UONE().
-  multupper(ONE()) = UONE().
-  multupper(ZERO_MORE()) = UMANY().
-  multupper(ONE_MORE()) = UMANY().
-  multupper(ZERO_MORE_ORD()) = UMANY().
-  multupper(ONE_MORE_ORD()) = UMANY().
+  lubtype : TYPE * TYPE -> TYPE
+  lubtype(X, X) = X.
+  lubtype(NOVALUE(), INT()) = INT().
+  lubtype(NOVALUE(), FLOAT()) = FLOAT().
+  lubtype(NOVALUE(), STRING()) = STRING().
+  lubtype(NOVALUE(), BOOLEAN()) = BOOLEAN().
+  lubtype(NOVALUE(), DATETIME()) = DATETIME().
+  lubtype(INT(), NOVALUE()) = INT().
+  lubtype(FLOAT(), NOVALUE()) = FLOAT().
+  lubtype(STRING(), NOVALUE()) = STRING().
+  lubtype(BOOLEAN(), NOVALUE()) = BOOLEAN().
+  lubtype(DATETIME(), NOVALUE()) = DATETIME().
   
   cast : TYPE * TYPE
   cast(INT(), FLOAT()).
@@ -122,6 +130,30 @@ rules // type utils
   cast(STRING(), NOVALUE()).
   cast(STRING(), STRING()).
   
+  zeroness : Exp -> ZERONESS
+  
+  zeroness(Literal(Float("0.0"))) = POSSIBLY_ZERO().
+  zeroness(Literal(Float(i))) = NON_ZERO().
+  zeroness(Literal(Int("0"))) = POSSIBLY_ZERO().
+  zeroness(Literal(Int(_))) = NON_ZERO().
+  zeroness(_) = POSSIBLY_ZERO().
+  
+  multupper : MULT -> MULTU
+  multupper(ZERO_ONE()) = UONE().
+  multupper(ONE()) = UONE().
+  multupper(ZERO_MORE()) = UMANY().
+  multupper(ONE_MORE()) = UMANY().
+  multupper(ZERO_MORE_ORD()) = UMANY().
+  multupper(ONE_MORE_ORD()) = UMANY().
+  
+  divisionMult : MULT * ZERONESS -> MULT
+  divisionMult(ZERO_ONE(), _) = ZERO_ONE().
+  divisionMult(ZERO_MORE(), _) = ZERO_MORE().
+  divisionMult(ONE(), NON_ZERO()) = ONE().
+  divisionMult(ONE(), POSSIBLY_ZERO()) = ZERO_ONE().
+  divisionMult(ONE_MORE(), NON_ZERO()) = ONE_MORE().
+  divisionMult(ONE_MORE(), POSSIBLY_ZERO()) = ZERO_MORE().
+  
 rules // multiplicity/ordering lattice
 
   //                 TZeroOrMore()
@@ -132,14 +164,21 @@ rules // multiplicity/ordering lattice
   //             \    /
   //             TOne()
   
-  compatMult : MULT * MULT
-  compatMult(ONE(), ZERO_ONE()).
-  compatMult(ONE(), ONE_MORE_ORD()).
-  compatMult(ZERO_ONE(), ZERO_MORE_ORD()).
-  compatMult(ONE_MORE_ORD(), ZERO_MORE_ORD()).
-  compatMult(ONE_MORE_ORD(), ONE_MORE()).
-  compatMult(ZERO_MORE_ORD(), ZERO_MORE()).
-  compatMult(ONE_MORE(), ZERO_MORE()).
+  mult : MULT * MULT
+  mult(ONE(), ZERO_ONE()).
+  mult(ONE(), ONE_MORE_ORD()).
+  mult(ZERO_ONE(), ZERO_MORE_ORD()).
+  mult(ONE_MORE_ORD(), ZERO_MORE_ORD()).
+  mult(ONE_MORE_ORD(), ONE_MORE()).
+  mult(ZERO_MORE_ORD(), ZERO_MORE()).
+  mult(ONE_MORE(), ZERO_MORE()).
+  mult(M1, M2) :- { X } mult(M1, X), mult(X, M2).
+  
+  multLub : MULT * MULT -> MULT
+  multLub(M, M) = M.
+  multLub(M1, M2) = X :-
+    mult(M1, X),
+    mult(M2, X).
   
 rules // strategy lattice
 
@@ -151,12 +190,19 @@ rules // strategy lattice
   //                 |
   //            TIncremental()
   
-  compatStrat : STRAT * STRAT
-  compatStrat(INCREMENTAL(), ONDEMAND_INCREMENTAL()).
-  compatStrat(ONDEMAND_INCREMENTAL(), EVENTUAL()).
-  compatStrat(ONDEMAND_INCREMENTAL(), ONDEMAND()).
-  compatStrat(ONDEMAND(), ONDEMAND_EVENTUAL()).
-  compatStrat(EVENTUAL(), ONDEMAND_EVENTUAL()).
+  strat : STRAT * STRAT
+  strat(INCREMENTAL(), ONDEMAND_INCREMENTAL()).
+  strat(ONDEMAND_INCREMENTAL(), EVENTUAL()).
+  strat(ONDEMAND_INCREMENTAL(), ONDEMAND()).
+  strat(ONDEMAND(), ONDEMAND_EVENTUAL()).
+  strat(EVENTUAL(), ONDEMAND_EVENTUAL()).
+  strat(S1, S2) :- { X } strat(S1, X), strat(X, S2).
+  
+  stratLub : STRAT * STRAT -> STRAT
+  stratLub(S, S) = S.
+  stratLub(S1, S2) = X :-
+    strat(S1, X),
+    strat(S2, X).
   
 rules // derivation type lattice
 
@@ -166,11 +212,18 @@ rules // derivation type lattice
   //        \      /
   //     DefaultValue()
   
-  compatDeriv : DERIV * DERIV
-  compatDeriv(DEFAULT_VALUE(), NORMAL()).
-  compatDeriv(DEFAULT_VALUE(), DERIVATION()).
-  compatDeriv(NORMAL(), ABSTRACT()).
-  compatDeriv(DERIVATION(), ABSTRACT()).
+  deriv : DERIV * DERIV
+  deriv(DEFAULT_VALUE(), NORMAL()).
+  deriv(DEFAULT_VALUE(), DERIVATION()).
+  deriv(NORMAL(), ABSTRACT()).
+  deriv(DERIVATION(), ABSTRACT()).
+  deriv(D1, D2) :- { X } deriv(D1, X), deriv(X, D2).
+  
+  derivLub : DERIV * DERIV -> DERIV
+  derivLub(D, D) = D.
+  derivLub(D1, D2) = X :-
+    deriv(D1, X),
+    deriv(D2, X).
   
 rules // type tests (maybe this should become a sort like in nabl2?)
 
@@ -212,19 +265,36 @@ rules // type tests (maybe this should become a sort like in nabl2?)
   canDivide(NOVALUE()).
   
 rules // typing
-  
+
   typeOfExp : scope * Exp -> TYPE
   
-  typeOfExp(_, Literal(Int(_))) = INT().
-  typeOfExp(_, Literal(Float(_))) = FLOAT().
-  typeOfExp(_, Literal(True())) = BOOLEAN().
-  typeOfExp(_, Literal(False())) = BOOLEAN().
-  typeOfExp(_, Literal(Datetime(_))) = DATETIME().
+  typeOfExp(s, e) = T :-
+    richTypeOfExp(s, e) == RICHTYPE(T, _, _).
+
+  richTypeOfExp : scope * Exp -> RICHTYPE
+  
+  richTypeOfExp(s, e@Addition(e1, e2)) = RICHTYPE(out_type, out_mult, out_strat) :-
+  { e1_type e1_mult e1_strat e2_type e2_mult e2_strat e1_mult_u e2_mult_u }
+    richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
+    richTypeOfExp(s, e2) == RICHTYPE(e2_type, e2_mult, e2_strat),
+    canAdd(e1_type) | error $[an expression of type [e1_type] cannot be the argument of an addition]@e1,
+    canAdd(e2_type) | error $[an expression of type [e2_type] cannot be the argument of an addition]@e2,
+    out_type == lubtype(e1_type, e2_type) | error $[expressions of type [e1_type] and [e2_type] cannot be added]@e,
+    out_mult == multLub(e1_mult, e2_mult),
+    out_strat == stratLub(e1_strat, e2_strat),
+    multupper(e1_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e1_mult]]@e1,
+    multupper(e2_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e2_mult]]@e2.
+      
+  richTypeOfExp(_, Literal(Int(_))) = RICHTYPE(INT(), ONE(), INCREMENTAL()).
+  richTypeOfExp(_, Literal(Float(_))) = RICHTYPE(FLOAT(), ONE(), INCREMENTAL()).
+  richTypeOfExp(_, Literal(True())) = RICHTYPE(BOOLEAN(), ONE(), INCREMENTAL()).
+  richTypeOfExp(_, Literal(False())) = RICHTYPE(BOOLEAN(), ONE(), INCREMENTAL()).
+  richTypeOfExp(_, Literal(String(_))) = RICHTYPE(STRING(), ONE(), INCREMENTAL()).
+  richTypeOfExp(_, Literal(NoValue())) = RICHTYPE(NOVALUE(), ONE(), INCREMENTAL()).
   
   typeOfAnyType : scope * AnyType -> TYPE
   
-  typeOfAnyType(_, TypePrimitive(t)) = tt :-
-    tt == typeOfPrimitiveType(t).
+  typeOfAnyType(_, TypePrimitive(t)) = typeOfPrimitiveType(t).
   
   typeOfPrimitiveType : PrimitiveType -> TYPE
   
@@ -234,10 +304,3 @@ rules // typing
   typeOfPrimitiveType(Int()) = INT().
   typeOfPrimitiveType(String()) = STRING().
   
-//  typeOfExp(s, Int(_)) = INT().
-//  typeOfExp(s, String(_)) = STRING().
-//  
-//  typeOfExp(s, Add(e1, e2)) = INT() :- {T1 T2}
-//    typeOfExp(s, e1) == T1,
-//    typeOfExp(s, e2) == T2,
-//    equitype(T1, T2) | error $[operands should have the same type].

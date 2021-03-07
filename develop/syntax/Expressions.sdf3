@@ -119,7 +119,7 @@ context-free syntax // literal values
 
 syntax // literal values: use kernel syntax to make sure " abc " is parsed as String(" abc ") instead of String("abc")
 
-  LitVal-CF = "\"" InterpolateString-CF "\""
+  LitVal-CF.String = "\"" InterpolateString-CF "\""
   
   InterpolateString-CF.InterpolateString = InterpolateString-CF "${" LAYOUT?-CF Exp-CF LAYOUT?-CF "}" LitString-CF
   InterpolateString-CF                   = LitString-CF
