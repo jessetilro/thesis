@@ -3,6 +3,10 @@ module statics/core
 imports signatures/develop-sig
 
 signature
+
+  relations
+    entity : ID -> TYPE
+    member : ID -> RICHTYPE
     
   sorts
     TYPE
@@ -12,6 +16,8 @@ signature
     RICHTYPE
     DERIV
     ZERONESS
+    MATERIALIZATION
+    SIDE
     
   constructors
     INT : TYPE
@@ -20,7 +26,7 @@ signature
     BOOLEAN : TYPE
     DATETIME : TYPE
     NOVALUE : TYPE
-    ENTITY : ID -> TYPE
+    ENTITY : scope -> TYPE
     
     ONE : MULT
     ZERO_ONE : MULT
@@ -48,6 +54,13 @@ signature
     NON_ZERO : ZERONESS
     POSSIBLY_ZERO : ZERONESS
     
+    MATERIALIZED : MATERIALIZATION
+    NON_MATERIALIZED : MATERIALIZATION
+    
+    LEFT : SIDE
+    RIGHT : SIDE
+    NONE : SIDE
+    
   name-resolution
     labels 
       // D // definition
@@ -57,7 +70,196 @@ signature
       S // requires a J to be wellformed
       // N // no edge at all (used for inverse querying)
   
-rules // type utils
+rules // multiplicity/ordering lattice
+
+  //                 TZeroOrMore()
+  //                  /    \
+  // ZeroOrMoreOrdered()  TOneOrMore()
+  //             /    \    /
+  //  TZeroOrOne()  TOneOrMoreOrdered()
+  //             \    /
+  //             TOne()
+  
+  mult : MULT * MULT
+  mult(ONE(), ZERO_ONE()).
+  mult(ONE(), ONE_MORE_ORD()).
+  mult(ZERO_ONE(), ZERO_MORE_ORD()).
+  mult(ONE_MORE_ORD(), ZERO_MORE_ORD()).
+  mult(ONE_MORE_ORD(), ONE_MORE()).
+  mult(ZERO_MORE_ORD(), ZERO_MORE()).
+  mult(ONE_MORE(), ZERO_MORE()).
+  mult(M1, M2) :- { X } mult(M1, X), mult(X, M2).
+  mult(M, M).
+  
+  multLub : MULT * MULT -> MULT
+  multLub(M, M) = M.
+  multLub(M1, M2) = X :-
+    mult(M1, X),
+    mult(M2, X).
+    
+  zeroness : Exp -> ZERONESS
+  
+  zeroness(Literal(Float("0.0"))) = POSSIBLY_ZERO().
+  zeroness(Literal(Float(i))) = NON_ZERO().
+  zeroness(Literal(Int("0"))) = POSSIBLY_ZERO().
+  zeroness(Literal(Int(_))) = NON_ZERO().
+  zeroness(_) = POSSIBLY_ZERO().
+  
+  multupper : MULT -> MULTU
+  multupper(ZERO_ONE()) = UONE().
+  multupper(ONE()) = UONE().
+  multupper(ZERO_MORE()) = UMANY().
+  multupper(ONE_MORE()) = UMANY().
+  multupper(ZERO_MORE_ORD()) = UMANY().
+  multupper(ONE_MORE_ORD()) = UMANY().
+  
+  divisionMult : MULT * ZERONESS -> MULT
+  divisionMult(ZERO_ONE(), _) = ZERO_ONE().
+  divisionMult(ZERO_MORE(), _) = ZERO_MORE().
+  divisionMult(ONE(), NON_ZERO()) = ONE().
+  divisionMult(ONE(), POSSIBLY_ZERO()) = ZERO_ONE().
+  divisionMult(ONE_MORE(), NON_ZERO()) = ONE_MORE().
+  divisionMult(ONE_MORE(), POSSIBLY_ZERO()) = ZERO_MORE().
+  
+  upperboundOne : MULT -> MULT
+  
+  upperboundOne(ZERO_ONE()) = ZERO_ONE().
+  upperboundOne(ZERO_MORE()) = ZERO_ONE().
+  upperboundOne(ZERO_MORE_ORD()) = ZERO_ONE().
+  upperboundOne(ONE()) = ONE().
+  upperboundOne(ONE_MORE()) = ONE().
+  upperboundOne(ONE_MORE_ORD()) = ONE().
+  
+  lowerboundZero : MULT -> MULT
+  
+  lowerboundZero(ZERO_ONE()) = ZERO_ONE().
+  lowerboundZero(ZERO_MORE()) = ZERO_MORE().
+  lowerboundZero(ZERO_MORE_ORD()) = ZERO_MORE_ORD().
+  lowerboundZero(ONE()) = ZERO_ONE().
+  lowerboundZero(ONE_MORE()) = ZERO_MORE().
+  lowerboundZero(ONE_MORE_ORD()) = ZERO_MORE_ORD().
+  
+  toOrdered : MULT -> MULT
+  
+  toOrdered(ZERO_ONE()) = ZERO_ONE().
+  toOrdered(ZERO_MORE()) = ZERO_MORE_ORD().
+  toOrdered(ZERO_MORE_ORD()) = ZERO_MORE_ORD().
+  toOrdered(ONE()) = ZERO_ONE().
+  toOrdered(ONE_MORE()) = ZERO_MORE_ORD().
+  toOrdered(ONE_MORE_ORD()) = ZERO_MORE_ORD().
+  
+  choiceLeftMult : MULT * MULT -> MULT
+
+  choiceLeftMult(ONE(), _) = ONE(). // [1,_] -> always left-hand side operand
+  choiceLeftMult(ONE_MORE() , _) = ONE_MORE(). // [1,_] -> always left-hand side operand
+  choiceLeftMult(ONE_MORE_ORD() , _) = ONE_MORE_ORD(). // [1,_] -> always left-hand side operand
+  choiceLeftMult(ZERO_ONE() , mult) = mult. // [0,1] -> always right-hand side multiplicity
+  choiceLeftMult(_, ZERO_MORE()) = ZERO_MORE(). // [0,_] <+ [0,n) unordered -> always [0,n) unordered
+  choiceLeftMult(_, ONE_MORE() ) = ONE_MORE(). // [0,_] <+ [1,n) unordered -> always [1,n) unordered
+  choiceLeftMult(ZERO_MORE_ORD(), ZERO_ONE() ) = ZERO_MORE_ORD(). // [0,n) ordered -> upper-bound many
+  choiceLeftMult(ZERO_MORE_ORD(), ONE()) = ONE_MORE_ORD(). // [0,n) ordered -> upper-bound many
+  choiceLeftMult(ZERO_MORE_ORD(), ZERO_MORE_ORD()) = ZERO_MORE_ORD(). // [0,n) ordered -> upper-bound many
+  choiceLeftMult(ZERO_MORE_ORD(), ONE_MORE_ORD() ) = ONE_MORE_ORD(). // [0,n) ordered -> upper-bound many
+  choiceLeftMult(ZERO_MORE(), ZERO_ONE() ) = ZERO_MORE(). // [0,n) unordered -> upper-bound many, drop ordering
+  choiceLeftMult(ZERO_MORE(), ONE()) = ONE_MORE(). // [0,n) unordered -> upper-bound many, drop ordering
+  choiceLeftMult(ZERO_MORE(), ZERO_MORE_ORD()) = ZERO_MORE(). // [0,n) unordered -> upper-bound many, drop ordering
+  choiceLeftMult(ZERO_MORE(), ONE_MORE_ORD() ) = ONE_MORE(). // [0,n) unordered -> upper-bound many, drop ordering
+    
+  mergeMult : MULT * MULT -> MULT
+  
+  mergeMult(ONE_MORE(), _) = ONE_MORE(). // [1,_] unordered -> [1,n) unordered
+  mergeMult(_, ONE_MORE()) = ONE_MORE(). // [1,_] unordered -> [1,n) unordered
+  mergeMult(ZERO_MORE() , ONE()) = ONE_MORE(). // [0,n) unordered ++ [1,_] -> [1,n) unordered
+  mergeMult(ONE(), ZERO_MORE() ) = ONE_MORE(). // [0,n) unordered ++ [1,_] -> [1,n) unordered
+  mergeMult(ZERO_MORE() , ONE_MORE_ORD() ) = ONE_MORE(). // [0,n) unordered ++ [1,_] -> [1,n) unordered
+  mergeMult(ONE_MORE_ORD() , ZERO_MORE() ) = ONE_MORE(). // [0,n) unordered ++ [1,_] -> [1,n) unordered
+  mergeMult(ZERO_MORE() , _) = ZERO_MORE(). // [0,n) unordered remaining -> [0,n) unordered
+  mergeMult(_, ZERO_MORE()) = ZERO_MORE(). // [0,n) unordered remaining -> [0,n) unordered
+  mergeMult(ZERO_ONE(), ZERO_ONE()) = ZERO_MORE_ORD(). // [0,_] ordered ++ [0,_] ordered -> [0,n) ordered
+  mergeMult(ZERO_ONE(), ZERO_MORE_ORD()) = ZERO_MORE_ORD(). // [0,_] ordered ++ [0,_] ordered -> [0,n) ordered
+  mergeMult(ZERO_MORE_ORD(), ZERO_ONE()) = ZERO_MORE_ORD(). // [0,_] ordered ++ [0,_] ordered -> [0,n) ordered
+  mergeMult(ZERO_MORE_ORD(), ZERO_MORE_ORD()) = ZERO_MORE_ORD(). // [0,_] ordered ++ [0,_] ordered -> [0,n) ordered
+  mergeMult(_ , _ ) = ONE_MORE_ORD(). // rest -> [1,n) ordered
+
+  multLift : MULT * MULT -> MULT //def * in -> outFactor
+
+  multLift(_, ONE()) = ONE(). // in~[1,1] fits in all multiplicities
+  multLift(ONE(), mult) = mult. // def~[1,1] lifts all multiplicities to in multiplicity
+  multLift(ZERO_MORE(), _ ) = ONE(). // def~[0,n) fits all multiplicities
+  multLift(ZERO_MORE_ORD(), _) = ONE(). // def~[0,n) fits all multiplicities
+  multLift(ZERO_ONE(), ZERO_ONE()) = ONE(). // fits
+  multLift(ZERO_ONE(), ZERO_MORE_ORD()) = ONE_MORE_ORD(). // lift upper
+  multLift(ZERO_ONE(), ONE_MORE_ORD()) = ONE_MORE_ORD(). // lift upper
+  multLift(ZERO_ONE(), ZERO_MORE()) = ONE_MORE(). // lift upper, lose ordering
+  multLift(ZERO_ONE(), ONE_MORE()) = ONE_MORE(). // lift upper, lose ordering
+  multLift(ONE_MORE(), ONE_MORE()) = ONE(). // fits
+  multLift(ONE_MORE(), ONE_MORE_ORD() ) = ONE(). // fits
+  multLift(ONE_MORE(), ZERO_ONE()) = ZERO_ONE(). // lift lower
+  multLift(ONE_MORE(), ZERO_MORE()) = ZERO_ONE(). // lift lower
+  multLift(ONE_MORE(), ZERO_MORE_ORD()) = ZERO_ONE(). // lift lower
+  multLift(ONE_MORE_ORD(), ONE_MORE_ORD()) = ONE(). // fits
+  multLift(ONE_MORE_ORD(), ONE_MORE()) = ONE_MORE(). // fits, lose ordering (means lift upper as well)
+  multLift(ONE_MORE_ORD(), ZERO_ONE()) = ZERO_ONE(). // lift lower
+  multLift(ONE_MORE_ORD(), ZERO_MORE_ORD()) = ZERO_ONE(). // lift lower
+  multLift(ONE_MORE_ORD(), ZERO_MORE()) = ZERO_MORE(). // lift lower, lose ordering (means lift upper as well)
+  
+rules // strategy lattice
+
+  //         TOnDemandEventual()
+  //              /      \
+  //      TEventual()   TOnDemand()
+  //              \      /
+  //       TOnDemandIncremental()
+  //                 |
+  //            TIncremental()
+  
+  strat : STRAT * STRAT
+  strat(INCREMENTAL(), ONDEMAND_INCREMENTAL()).
+  strat(ONDEMAND_INCREMENTAL(), EVENTUAL()).
+  strat(ONDEMAND_INCREMENTAL(), ONDEMAND()).
+  strat(ONDEMAND(), ONDEMAND_EVENTUAL()).
+  strat(EVENTUAL(), ONDEMAND_EVENTUAL()).
+  strat(S1, S2) :- { X } strat(S1, X), strat(X, S2).
+  
+  stratLub : STRAT * STRAT -> STRAT
+  stratLub(S, S) = S.
+  stratLub(S1, S2) = X :-
+    strat(S1, X),
+    strat(S2, X).
+    
+  materialization : STRAT * SIDE -> MATERIALIZATION
+  
+  materialization(_, NONE()) = MATERIALIZED().
+  materialization(_, LEFT()) = MATERIALIZED().
+  materialization(INCREMENTAL(), RIGHT()) = MATERIALIZED().
+  materialization(EVENTUAL(), RIGHT()) = MATERIALIZED().
+  materialization(ONDEMAND(), RIGHT()) = NON_MATERIALIZED().
+  materialization(ONDEMAND_INCREMENTAL(), RIGHT()) = NON_MATERIALIZED().
+  materialization(ONDEMAND_EVENTUAL(), RIGHT()) = NON_MATERIALIZED().
+  
+rules // derivation type lattice
+
+  //       Abstract()
+  //        /      \ 
+  //  Normal()    Derivation()
+  //        \      /
+  //     DefaultValue()
+  
+  deriv : DERIV * DERIV
+  deriv(DEFAULT_VALUE(), NORMAL()).
+  deriv(DEFAULT_VALUE(), DERIVATION()).
+  deriv(NORMAL(), ABSTRACT()).
+  deriv(DERIVATION(), ABSTRACT()).
+  deriv(D1, D2) :- { X } deriv(D1, X), deriv(X, D2).
+  deriv(D, D).
+  
+  derivLub : DERIV * DERIV -> DERIV
+  derivLub(D, D) = D.
+  derivLub(D1, D2) = X :-
+    deriv(D1, X),
+    deriv(D2, X).
+  
+rules // types
 
   equitype : TYPE * TYPE
   
@@ -94,30 +296,6 @@ rules // type utils
   cast(STRING(), NOVALUE()).
   cast(STRING(), STRING()).
   
-  zeroness : Exp -> ZERONESS
-  
-  zeroness(Literal(Float("0.0"))) = POSSIBLY_ZERO().
-  zeroness(Literal(Float(i))) = NON_ZERO().
-  zeroness(Literal(Int("0"))) = POSSIBLY_ZERO().
-  zeroness(Literal(Int(_))) = NON_ZERO().
-  zeroness(_) = POSSIBLY_ZERO().
-  
-  multupper : MULT -> MULTU
-  multupper(ZERO_ONE()) = UONE().
-  multupper(ONE()) = UONE().
-  multupper(ZERO_MORE()) = UMANY().
-  multupper(ONE_MORE()) = UMANY().
-  multupper(ZERO_MORE_ORD()) = UMANY().
-  multupper(ONE_MORE_ORD()) = UMANY().
-  
-  divisionMult : MULT * ZERONESS -> MULT
-  divisionMult(ZERO_ONE(), _) = ZERO_ONE().
-  divisionMult(ZERO_MORE(), _) = ZERO_MORE().
-  divisionMult(ONE(), NON_ZERO()) = ONE().
-  divisionMult(ONE(), POSSIBLY_ZERO()) = ZERO_ONE().
-  divisionMult(ONE_MORE(), NON_ZERO()) = ONE_MORE().
-  divisionMult(ONE_MORE(), POSSIBLY_ZERO()) = ZERO_MORE().
-  
   subtractionType : TYPE -> TYPE
   
   subtractionType(INT()) = INT().
@@ -128,80 +306,6 @@ rules // type utils
   divisionType : TYPE -> TYPE
   
   divisionType(_) = FLOAT().
-  
-rules // multiplicity/ordering lattice
-
-  //                 TZeroOrMore()
-  //                  /    \
-  // ZeroOrMoreOrdered()  TOneOrMore()
-  //             /    \    /
-  //  TZeroOrOne()  TOneOrMoreOrdered()
-  //             \    /
-  //             TOne()
-  
-  mult : MULT * MULT
-  mult(ONE(), ZERO_ONE()).
-  mult(ONE(), ONE_MORE_ORD()).
-  mult(ZERO_ONE(), ZERO_MORE_ORD()).
-  mult(ONE_MORE_ORD(), ZERO_MORE_ORD()).
-  mult(ONE_MORE_ORD(), ONE_MORE()).
-  mult(ZERO_MORE_ORD(), ZERO_MORE()).
-  mult(ONE_MORE(), ZERO_MORE()).
-  mult(M1, M2) :- { X } mult(M1, X), mult(X, M2).
-  mult(M, M).
-  
-  multLub : MULT * MULT -> MULT
-  multLub(M, M) = M.
-  multLub(M1, M2) = X :-
-    mult(M1, X),
-    mult(M2, X).
-  
-rules // strategy lattice
-
-  //         TOnDemandEventual()
-  //              /      \
-  //      TEventual()   TOnDemand()
-  //              \      /
-  //       TOnDemandIncremental()
-  //                 |
-  //            TIncremental()
-  
-  strat : STRAT * STRAT
-  strat(INCREMENTAL(), ONDEMAND_INCREMENTAL()).
-  strat(ONDEMAND_INCREMENTAL(), EVENTUAL()).
-  strat(ONDEMAND_INCREMENTAL(), ONDEMAND()).
-  strat(ONDEMAND(), ONDEMAND_EVENTUAL()).
-  strat(EVENTUAL(), ONDEMAND_EVENTUAL()).
-  strat(S1, S2) :- { X } strat(S1, X), strat(X, S2).
-  
-  stratLub : STRAT * STRAT -> STRAT
-  stratLub(S, S) = S.
-  stratLub(S1, S2) = X :-
-    strat(S1, X),
-    strat(S2, X).
-  
-rules // derivation type lattice
-
-  //       Abstract()
-  //        /      \ 
-  //  Normal()    Derivation()
-  //        \      /
-  //     DefaultValue()
-  
-  deriv : DERIV * DERIV
-  deriv(DEFAULT_VALUE(), NORMAL()).
-  deriv(DEFAULT_VALUE(), DERIVATION()).
-  deriv(NORMAL(), ABSTRACT()).
-  deriv(DERIVATION(), ABSTRACT()).
-  deriv(D1, D2) :- { X } deriv(D1, X), deriv(X, D2).
-  
-  derivLub : DERIV * DERIV -> DERIV
-  derivLub(D, D) = D.
-  derivLub(D1, D2) = X :-
-    deriv(D1, X),
-    deriv(D2, X).
-  
-rules // type tests (maybe this should become a sort like in nabl2?)
 
   isNumeric : TYPE
   isNumeric(INT()).
@@ -240,7 +344,7 @@ rules // type tests (maybe this should become a sort like in nabl2?)
   canDivide(INT()).
   canDivide(NOVALUE()).
   
-rules // typing
+rules // type checking
 
   typeOfExp : scope * Exp -> TYPE
   
