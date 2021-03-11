@@ -5,6 +5,7 @@ imports signatures/develop-sig
 imports statics/core
 imports statics/expressions/literals
 imports statics/expressions/math
+imports statics/expressions/logic
 
 rules // multi-file entry points
 
@@ -33,6 +34,8 @@ rules // models
   modelOk : scope * Model
   modelOk(s, Entity(id, _, _, members)) :-
     membersOk(s, members).
+    
+  modelOk(s, Relation(id, _, _, _, _, _)).
     
   membersOk maps memberOk(*, list(*))
   memberOk : scope * Member

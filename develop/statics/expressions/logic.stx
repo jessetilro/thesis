@@ -1,0 +1,9 @@
+module statics/expressions/logic
+
+imports statics/core
+
+rules
+
+  richTypeOfExp(s, e@Not(e1)) = RICHTYPE(out_type, out_mult, out_strat) :-
+    richTypeOfExp(s, e1) == RICHTYPE(out_type, out_mult, out_strat),
+    isBoolean(out_type).

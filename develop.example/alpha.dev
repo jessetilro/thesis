@@ -2,8 +2,15 @@ module alpha
 
 model
   
-  entity Test {
+  entity Alpha {
     test : Int = 1 + 2 (on-demand)
     multiplication : Float = 2.0 / 0.0 (on-demand)
-    division : Float = 1.0 * 2.0 / 0.0 (on-demand)
+    division : Float = 1.0 * (3 % 2 / 2) (on-demand)
+    bool : Boolean = not(true)
   }
+  
+  entity Beta {
+    number : Int = 1
+  }
+  
+  relation Alpha.beta <-> Beta.alpha
