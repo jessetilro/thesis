@@ -7,3 +7,101 @@ rules
   richTypeOfExp(s, e@Not(e1)) = RICHTYPE(out_type, out_mult, out_strat) :-
     richTypeOfExp(s, e1) == RICHTYPE(out_type, out_mult, out_strat),
     isBoolean(out_type).
+    
+  richTypeOfExp(s, e@Equal(e1, e2)) = RICHTYPE(BOOLEAN(), out_mult, out_strat) :-
+  { e1_type e1_mult e1_strat e2_type e2_mult e2_strat out_type }
+    richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
+    richTypeOfExp(s, e2) == RICHTYPE(e2_type, e2_mult, e2_strat),
+    out_type == lubtype(e1_type, e2_type),
+    out_mult == multLub(e1_mult, e2_mult),
+    out_strat == stratLub(e1_strat, e2_strat),
+    multupper(e1_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e1_mult]]@e1,
+    multupper(e2_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e2_mult]]@e2.
+    
+  richTypeOfExp(s, e@Inequal(e1, e2)) = RICHTYPE(BOOLEAN(), out_mult, out_strat) :-
+  { e1_type e1_mult e1_strat e2_type e2_mult e2_strat out_type }
+    richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
+    richTypeOfExp(s, e2) == RICHTYPE(e2_type, e2_mult, e2_strat),
+    out_type == lubtype(e1_type, e2_type),
+    out_mult == multLub(e1_mult, e2_mult),
+    out_strat == stratLub(e1_strat, e2_strat),
+    multupper(e1_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e1_mult]]@e1,
+    multupper(e2_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e2_mult]]@e2.
+  
+  richTypeOfExp(s, e@LessThan(e1, e2)) = RICHTYPE(BOOLEAN(), out_mult, out_strat) :-
+  { e1_type e1_mult e1_strat e2_type e2_mult e2_strat out_type }
+    richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
+    richTypeOfExp(s, e2) == RICHTYPE(e2_type, e2_mult, e2_strat),
+    canCompare(e1_type),
+    out_type == lubtype(e1_type, e2_type),
+    out_mult == multLub(e1_mult, e2_mult),
+    out_strat == stratLub(e1_strat, e2_strat),
+    multupper(e1_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e1_mult]]@e1,
+    multupper(e2_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e2_mult]]@e2.
+    
+  richTypeOfExp(s, e@LessThanEqual(e1, e2)) = RICHTYPE(BOOLEAN(), out_mult, out_strat) :-
+  { e1_type e1_mult e1_strat e2_type e2_mult e2_strat out_type }
+    richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
+    richTypeOfExp(s, e2) == RICHTYPE(e2_type, e2_mult, e2_strat),
+    canCompare(e1_type),
+    out_type == lubtype(e1_type, e2_type),
+    out_mult == multLub(e1_mult, e2_mult),
+    out_strat == stratLub(e1_strat, e2_strat),
+    multupper(e1_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e1_mult]]@e1,
+    multupper(e2_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e2_mult]]@e2.
+    
+  richTypeOfExp(s, e@GreaterThan(e1, e2)) = RICHTYPE(BOOLEAN(), out_mult, out_strat) :-
+  { e1_type e1_mult e1_strat e2_type e2_mult e2_strat out_type }
+    richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
+    richTypeOfExp(s, e2) == RICHTYPE(e2_type, e2_mult, e2_strat),
+    canCompare(e1_type),
+    out_type == lubtype(e1_type, e2_type),
+    out_mult == multLub(e1_mult, e2_mult),
+    out_strat == stratLub(e1_strat, e2_strat),
+    multupper(e1_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e1_mult]]@e1,
+    multupper(e2_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e2_mult]]@e2.
+    
+  richTypeOfExp(s, e@GreaterThanEqual(e1, e2)) = RICHTYPE(BOOLEAN(), out_mult, out_strat) :-
+  { e1_type e1_mult e1_strat e2_type e2_mult e2_strat out_type }
+    richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
+    richTypeOfExp(s, e2) == RICHTYPE(e2_type, e2_mult, e2_strat),
+    canCompare(e1_type),
+    out_type == lubtype(e1_type, e2_type),
+    out_mult == multLub(e1_mult, e2_mult),
+    out_strat == stratLub(e1_strat, e2_strat),
+    multupper(e1_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e1_mult]]@e1,
+    multupper(e2_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e2_mult]]@e2.
+   
+  richTypeOfExp(s, e@And(e1, e2)) = RICHTYPE(BOOLEAN(), out_mult, out_strat) :-
+  { e1_type e1_mult e1_strat e2_type e2_mult e2_strat out_type }
+    richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
+    richTypeOfExp(s, e2) == RICHTYPE(e2_type, e2_mult, e2_strat),
+    isBoolean(e1_type),
+    isBoolean(e2_type),
+    out_mult == multLub(e1_mult, e2_mult),
+    out_strat == stratLub(e1_strat, e2_strat),
+    multupper(e1_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e1_mult]]@e1,
+    multupper(e2_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e2_mult]]@e2.
+    
+  richTypeOfExp(s, e@Or(e1, e2)) = RICHTYPE(BOOLEAN(), out_mult, out_strat) :-
+  { e1_type e1_mult e1_strat e2_type e2_mult e2_strat out_type }
+    richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
+    richTypeOfExp(s, e2) == RICHTYPE(e2_type, e2_mult, e2_strat),
+    isBoolean(e1_type),
+    isBoolean(e2_type),
+    out_mult == multLub(e1_mult, e2_mult),
+    out_strat == stratLub(e1_strat, e2_strat),
+    multupper(e1_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e1_mult]]@e1,
+    multupper(e2_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e2_mult]]@e2.
+    
+  richTypeOfExp(s, e@If(e1, e2, e3)) = RICHTYPE(out_type, out_mult, out_strat) :-
+  { e1_type e1_mult e1_strat e2_type e2_mult e2_strat e3_type e3_mult e3_strat }
+    richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
+    richTypeOfExp(s, e2) == RICHTYPE(e2_type, e2_mult, e2_strat),
+    richTypeOfExp(s, e3) == RICHTYPE(e3_type, e3_mult, e3_strat),
+    isBoolean(e1_type) | error $[Expected condition type of BOOLEAN() but got [e1_type]],
+    out_type == lubtype(e2_type, e3_type),
+    out_mult == multLub(e2_mult, e3_mult),
+    out_strat == stratLub(stratLub(e1_strat, e2_strat), e3_strat),
+    multupper(e1_mult) == UONE() | error $[Expected condition multiplicity of One got [e1_mult]]@e1. // todo should be warning
+  
