@@ -88,15 +88,60 @@ rules // multiplicity/ordering lattice
   mult(ONE_MORE_ORD(), ONE_MORE()).
   mult(ZERO_MORE_ORD(), ZERO_MORE()).
   mult(ONE_MORE(), ZERO_MORE()).
-  mult(M1, M2) :- { X } mult(M1, X), mult(X, M2).
-  mult(M, M).
+  
+//  // transitive
+//  mult(ONE(), ZERO_MORE_ORD()).
+//  mult(ONE(), ONE_MORE()).
+//  mult(ONE(), ZERO_MORE()).
+//  mult(ZERO_ONE(), ZERO_MORE()).
+//  mult(ONE_MORE_ORD(), ZERO_MORE()).
+//  
+//  // transive (dynamic)
+//  mult(M1, M2) :- { X } mult(M1, X), mult(X, M2).
+//  
+//  // identity
+//  mult(M, M).
   
   multLub : MULT * MULT -> MULT
-  multLub(M, M) = M.
-  multLub(M1, M2) = X :-
-    mult(M1, X),
-    mult(M2, X).
-    
+  
+  // identity
+  multLub(ONE(), ONE()) = ONE().
+  multLub(ZERO_ONE(), ZERO_ONE()) = ZERO_ONE().
+  multLub(ONE_MORE_ORD(), ONE_MORE_ORD()) = ONE_MORE_ORD().
+  multLub(ZERO_MORE_ORD(), ZERO_MORE_ORD()) = ZERO_MORE_ORD().
+  multLub(ONE_MORE(), ONE_MORE()) = ONE_MORE().
+  multLub(ZERO_MORE(), ZERO_MORE()) = ZERO_MORE().
+  
+  // root + descendants
+  multLub(ZERO_MORE(), _) = ZERO_MORE().
+  multLub(_, ZERO_MORE()) = ZERO_MORE().
+  multLub(ZERO_MORE_ORD(), ONE_MORE()) = ZERO_MORE().
+  multLub(ONE_MORE(), ZERO_MORE_ORD()) = ZERO_MORE().
+  
+  // zero_more_ord + descendants
+  multLub(ZERO_MORE_ORD(), ZERO_ONE()) = ZERO_MORE_ORD().
+  multLub(ZERO_ONE(), ZERO_MORE_ORD()) = ZERO_MORE_ORD().
+  multLub(ZERO_MORE_ORD(), ONE_MORE_ORD()) = ZERO_MORE_ORD().
+  multLub(ONE_MORE_ORD(), ZERO_MORE_ORD()) = ZERO_MORE_ORD().
+  multLub(ZERO_MORE_ORD(), ONE()) = ZERO_MORE_ORD().
+  multLub(ONE(), ZERO_MORE_ORD()) = ZERO_MORE_ORD().
+  
+  // one_more + descendants
+  multLub(ONE_MORE(), ZERO_ONE()) = ONE_MORE().
+  multLub(ZERO_ONE(), ONE_MORE()) = ONE_MORE().
+  multLub(ONE_MORE(), ONE_MORE_ORD()) = ONE_MORE().
+  multLub(ONE_MORE_ORD(), ONE_MORE()) = ONE_MORE().
+  multLub(ONE_MORE(), ONE()) = ONE_MORE().
+  multLub(ONE(), ONE_MORE()) = ONE_MORE().
+  
+  // zero_one + descendant
+  multLub(ONE(), ZERO_ONE()) = ZERO_ONE().
+  multLub(ZERO_ONE(), ONE()) = ZERO_ONE().
+  
+  // one_more_ord + descendant
+  multLub(ONE(), ONE_MORE_ORD()) = ONE_MORE_ORD().
+  multLub(ONE_MORE_ORD(), ONE()) = ONE_MORE_ORD().
+  
   zeroness : Exp -> ZERONESS
   
   zeroness(Literal(Float("0.0"))) = POSSIBLY_ZERO().
