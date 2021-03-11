@@ -1,0 +1,13 @@
+module statics/expressions/references
+
+imports statics/core
+
+rules
+
+  richTypeOfExp(s, This()) = RICHTYPE(t, ONE(), INCREMENTAL()) :-
+    resolveThis(s) == t.
+    
+  richTypeOfExp(s, Ref(r)) = RICHTYPE(d_type, d_mult, d_strat) :- { richtype }
+    resolveMember(s, r) == richtype | error $[reference [r] cannot be resolved]@r,
+    richtype == RICHTYPE(d_type, d_mult, d_strat),
+    @r.type := richtype. // todo check materialization

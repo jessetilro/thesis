@@ -7,6 +7,8 @@ imports statics/expressions/literals
 imports statics/expressions/math
 imports statics/expressions/logic
 imports statics/expressions/multiplicity-operators
+imports statics/expressions/casts
+imports statics/expressions/references
 
 rules // multi-file entry points
 
@@ -33,9 +35,12 @@ rules // models
   modelsOk maps modelOk(*, list(*))
   
   modelOk : scope * Model
-  modelOk(s, Entity(id, _, _, members)) :- { s_model }
+  modelOk(s, Entity(id, _, _, members)) :- { s_model s_resolve }
     new s_model, s_model -P-> s,
-    membersOk(s_model, members).
+    declareEntity(s, id, s_model),
+    membersOk(s_model, members),
+    resolveEntity(s_model, id) == ENTITY(s_resolve) | error $[duplicate definition of entity [id]]@id,
+    @id.type := ENTITY(s_resolve).
     
   modelOk(s, Relation(id, _, _, _, _, _)).
     

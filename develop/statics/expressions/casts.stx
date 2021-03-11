@@ -1,0 +1,17 @@
+module statics/expressions/casts
+
+imports statics/core
+
+rules
+
+  richTypeOfExp(s, e@Cast(e1, t)) = RICHTYPE(t_type, e_mult, e_strat) :- { e_type }
+    richTypeOfExp(s, e1) == RICHTYPE(e_type, e_mult, e_strat),
+    t_type == typeOfPrimitiveType(t),
+    cast(t_type, e_type) | error $[cannot cast a [e_type] to a [t_type]]@e.
+    
+  richTypeOfExp(s, FilterType(e1, t)) = RICHTYPE(t_type, out_mult, e_strat) :-
+  { e_type e_mult }
+    richTypeOfExp(s, e1) == RICHTYPE(e_type, e_mult, e_strat),
+    t_type == typeOfEntityType(t),
+    subtype(t_type, e_type) | error $[[t] is not a subtype of [e_type]]@t,
+    out_mult == lowerboundZero(e_mult).

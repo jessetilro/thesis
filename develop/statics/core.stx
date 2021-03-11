@@ -448,3 +448,34 @@ rules // type checking
   typeOfPrimitiveType(Int()) = INT().
   typeOfPrimitiveType(String()) = STRING().
   
+  typeOfEntityType : EntityType -> TYPE
+  
+  typeOfEntityType(EntityType(x)) = ENTITY(s) :-
+    new s. // todo implement resolution
+    
+rules // name resolution
+
+  declareEntity : scope * ID * scope
+  
+  declareEntity(s, id, s_model) :-
+    !entity[id, ENTITY(s_model)] in s.
+
+  resolveEntity : scope * ID -> TYPE
+  
+  resolveEntity(s, id) = type :-
+    query entity
+      filter P* and { x' :- x' == id }
+        min and true
+        in s |-> [(_, (_, type))].
+     
+  resolveMember : scope * ID -> RICHTYPE 
+      
+  resolveMember(s, id) = RICHTYPE(type, mult, strat) :-
+    query member
+      filter e and { x' :- x' == id }
+        min and true
+        in s |-> [(_, (_, RICHTYPE(type, mult, strat)))|_].
+        
+  resolveThis : scope -> TYPE
+        
+  resolveThis(s) = ENTITY(s). // todo actually declare this and resolve it
