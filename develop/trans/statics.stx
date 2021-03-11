@@ -91,7 +91,7 @@ rules // models
   memberOk : scope * Member
   
   memberOk(s, DerivationAttribute(_, type, _, exp, _)) :- {declared}
-    typeOfAnyType(s, type) == typeOfExp(s, exp) | error $[the expression does not have the declared type]@exp.
+    typeOfExp(s, exp) == typeOfAnyType(s, type) | error $[the expression does not have the declared type]@exp.
   
 rules // type utils
 
@@ -154,6 +154,17 @@ rules // type utils
   divisionMult(ONE_MORE(), NON_ZERO()) = ONE_MORE().
   divisionMult(ONE_MORE(), POSSIBLY_ZERO()) = ZERO_MORE().
   
+  subtractionType : TYPE -> TYPE
+  
+  subtractionType(INT()) = INT().
+  subtractionType(FLOAT()) = FLOAT().
+  subtractionType(DATETIME()) = INT().
+  subtractionType(NOVALUE()) = NOVALUE().
+  
+  divisionType : TYPE -> TYPE
+  
+  divisionType(_) = FLOAT().
+  
 rules // multiplicity/ordering lattice
 
   //                 TZeroOrMore()
@@ -173,6 +184,7 @@ rules // multiplicity/ordering lattice
   mult(ZERO_MORE_ORD(), ZERO_MORE()).
   mult(ONE_MORE(), ZERO_MORE()).
   mult(M1, M2) :- { X } mult(M1, X), mult(X, M2).
+  mult(M, M).
   
   multLub : MULT * MULT -> MULT
   multLub(M, M) = M.
@@ -274,12 +286,72 @@ rules // typing
   richTypeOfExp : scope * Exp -> RICHTYPE
   
   richTypeOfExp(s, e@Addition(e1, e2)) = RICHTYPE(out_type, out_mult, out_strat) :-
-  { e1_type e1_mult e1_strat e2_type e2_mult e2_strat e1_mult_u e2_mult_u }
+  { e1_type e1_mult e1_strat e2_type e2_mult e2_strat }
     richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
     richTypeOfExp(s, e2) == RICHTYPE(e2_type, e2_mult, e2_strat),
     canAdd(e1_type) | error $[an expression of type [e1_type] cannot be the argument of an addition]@e1,
     canAdd(e2_type) | error $[an expression of type [e2_type] cannot be the argument of an addition]@e2,
     out_type == lubtype(e1_type, e2_type) | error $[expressions of type [e1_type] and [e2_type] cannot be added]@e,
+    out_mult == multLub(e1_mult, e2_mult),
+    out_strat == stratLub(e1_strat, e2_strat),
+    multupper(e1_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e1_mult]]@e1,
+    multupper(e2_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e2_mult]]@e2.
+      
+  richTypeOfExp(s, e@Subtraction(e1, e2)) = RICHTYPE(out_type, out_mult, out_strat) :-
+  { e1_type e1_mult e1_strat e2_type e2_mult e2_strat lub_type }
+    richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
+    richTypeOfExp(s, e2) == RICHTYPE(e2_type, e2_mult, e2_strat),
+    lub_type == lubtype(e1_type, e2_type) | error $[expressions of type [e1_type] and [e2_type] cannot be subtracted]@e,
+    out_type == subtractionType(lub_type) | error $[expressions of type [e1_type] and [e2_type] cannot be subtracted]@e,
+    out_mult == multLub(e1_mult, e2_mult),
+    out_strat == stratLub(e1_strat, e2_strat),
+    multupper(e1_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e1_mult]]@e1,
+    multupper(e2_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e2_mult]]@e2.
+    
+  richTypeOfExp(s, e@Division(e1, e2)) = RICHTYPE(out_type, out_mult, out_strat) :-
+  { e1_type e1_mult e1_strat e2_type e2_mult e2_strat lub_type }
+    richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
+    richTypeOfExp(s, e2) == RICHTYPE(e2_type, e2_mult, e2_strat),
+    canDivide(e1_type) | error $[an expression of type [e1_type] cannot be the argument of a division]@e1,
+    canDivide(e2_type) | error $[an expression of type [e2_type] cannot be the argument of a division]@e2,
+    lub_type == lubtype(e1_type, e2_type) | error $[expressions of type [e1_type] and [e2_type] cannot be divided]@e,
+    out_type == divisionType(lub_type),
+    out_mult == divisionMult(multLub(e1_mult, e2_mult), zeroness(e2)),
+    out_strat == stratLub(e1_strat, e2_strat),
+    multupper(e1_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e1_mult]]@e1,
+    multupper(e2_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e2_mult]]@e2.
+  
+  richTypeOfExp(s, e@FloorDivision(e1, e2)) = RICHTYPE(out_type, out_mult, out_strat) :-
+  { e1_type e1_mult e1_strat e2_type e2_mult e2_strat }
+    richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
+    richTypeOfExp(s, e2) == RICHTYPE(e2_type, e2_mult, e2_strat),
+    canDivide(e1_type) | error $[an expression of type [e1_type] cannot be the argument of a division]@e1,
+    canDivide(e2_type) | error $[an expression of type [e2_type] cannot be the argument of a division]@e2,
+    out_type == lubtype(e1_type, e2_type) | error $[expressions of type [e1_type] and [e2_type] cannot be divided]@e,
+    out_mult == divisionMult(multLub(e1_mult, e2_mult), zeroness(e2)),
+    out_strat == stratLub(e1_strat, e2_strat),
+    multupper(e1_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e1_mult]]@e1,
+    multupper(e2_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e2_mult]]@e2.
+      
+  richTypeOfExp(s, e@Modulo(e1, e2)) = RICHTYPE(out_type, out_mult, out_strat) :-
+  { e1_type e1_mult e1_strat e2_type e2_mult e2_strat }
+    richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
+    richTypeOfExp(s, e2) == RICHTYPE(e2_type, e2_mult, e2_strat),
+    canDivide(e1_type) | error $[an expression of type [e1_type] cannot be the argument of a division]@e1,
+    canDivide(e2_type) | error $[an expression of type [e2_type] cannot be the argument of a division]@e2,
+    out_type == lubtype(e1_type, e2_type) | error $[expressions of type [e1_type] and [e2_type] cannot be divided]@e,
+    out_mult == divisionMult(multLub(e1_mult, e2_mult), zeroness(e2)),
+    out_strat == stratLub(e1_strat, e2_strat),
+    multupper(e1_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e1_mult]]@e1,
+    multupper(e2_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e2_mult]]@e2.
+  
+  richTypeOfExp(s, e@Multiplication(e1, e2)) = RICHTYPE(out_type, out_mult, out_strat) :-
+  { e1_type e1_mult e1_strat e2_type e2_mult e2_strat }
+    richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
+    richTypeOfExp(s, e2) == RICHTYPE(e2_type, e2_mult, e2_strat),
+    canDivide(e1_type) | error $[an expression of type [e1_type] cannot be the argument of a multiplication]@e1,
+    canDivide(e2_type) | error $[an expression of type [e2_type] cannot be the argument of a multiplication]@e2,
+    out_type == lubtype(e1_type, e2_type) | error $[expressions of type [e1_type] and [e2_type] cannot be multiplied]@e,
     out_mult == multLub(e1_mult, e2_mult),
     out_strat == stratLub(e1_strat, e2_strat),
     multupper(e1_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e1_mult]]@e1,
