@@ -33,15 +33,28 @@ rules // models
   modelsOk maps modelOk(*, list(*))
   
   modelOk : scope * Model
-  modelOk(s, Entity(id, _, _, members)) :-
-    membersOk(s, members).
+  modelOk(s, Entity(id, _, _, members)) :- { s_model }
+    new s_model, s_model -P-> s,
+    membersOk(s_model, members).
     
   modelOk(s, Relation(id, _, _, _, _, _)).
     
   membersOk maps memberOk(*, list(*))
   memberOk : scope * Member
   
-  memberOk(s, DerivationAttribute(_, type, _, exp, _)) :- {declared}
-    typeOfExp(s, exp) == typeOfAnyType(s, type) | error $[the expression does not have the declared type]@exp,
-    @exp.type := richTypeOfExp(s, exp).
+  memberOk(s, DerivationAttribute(id, type, mult, exp, strat)) :-
+  { declared decl_richtype e_type e_mult e_strat d_type d_mult d_strat }
+    RICHTYPE(e_type, e_mult, e_strat) == richTypeOfExp(s, exp),
+
+    d_type == typeOfAnyType(s, type),
+    d_mult == multOfMultOrdList(mult),
+    d_strat == stratOfStratList(strat),
+    
+    subtype(e_type, d_type) | error $[type mismatch: expected [d_type] got [e_type]]@exp,
+    mult(e_mult, d_mult) | error $[multiplicity mismatch: expected [d_mult] got [e_mult]]@exp,
+    strat(e_strat, d_strat) | error $[strategy mismatch: expected [d_strat] got [e_strat]]@exp,
+    
+    !member[id, RICHTYPE(d_type, d_mult, d_strat)] in s,
+    @id.type := RICHTYPE(d_type, d_mult, d_strat),
+    @exp.type := RICHTYPE(e_type, e_mult, e_strat).
   

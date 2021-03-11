@@ -80,6 +80,29 @@ rules // multiplicity/ordering lattice
   //             \    /
   //             TOne()
   
+  multOfMultList : list(Multiplicity) -> MULT
+  
+  multOfMultList([x]) = multOfMult(x).
+  multOfMultList([]) = ONE(). // todo check default multiplicity
+  
+  multOfMult : Multiplicity -> MULT
+  
+  multOfMult(One()) = ONE().
+  multOfMult(ZeroOrOne()) = ZERO_ONE().
+  multOfMult(OneOrMore()) = ONE_MORE().
+  multOfMult(ZeroOrMore()) = ZERO_MORE().
+  
+  multOfMultOrdList : list(MultiplicityOrdering) -> MULT
+  
+  multOfMultOrdList([x]) = multOfMultOrd(x).
+  multOfMultOrdList([]) = ONE(). // todo check default multiplicity ordering
+  
+  multOfMultOrd : MultiplicityOrdering -> MULT
+  
+  multOfMultOrd(Multiplicity2MultiplicityOrdering(x)) = multOfMult(x).
+  multOfMultOrd(OneOrMoreOrdered()) = ONE_MORE_ORD().
+  multOfMultOrd(ZeroOrMoreOrdered()) = ZERO_MORE_ORD().
+  
   mult : MULT * MULT
   mult(ONE(), ZERO_ONE()).
   mult(ONE(), ONE_MORE_ORD()).
@@ -89,18 +112,15 @@ rules // multiplicity/ordering lattice
   mult(ZERO_MORE_ORD(), ZERO_MORE()).
   mult(ONE_MORE(), ZERO_MORE()).
   
-//  // transitive
-//  mult(ONE(), ZERO_MORE_ORD()).
-//  mult(ONE(), ONE_MORE()).
-//  mult(ONE(), ZERO_MORE()).
-//  mult(ZERO_ONE(), ZERO_MORE()).
-//  mult(ONE_MORE_ORD(), ZERO_MORE()).
-//  
-//  // transive (dynamic)
-//  mult(M1, M2) :- { X } mult(M1, X), mult(X, M2).
-//  
-//  // identity
-//  mult(M, M).
+  // transitive
+  mult(ONE(), ZERO_MORE_ORD()).
+  mult(ONE(), ONE_MORE()).
+  mult(ONE(), ZERO_MORE()).
+  mult(ZERO_ONE(), ZERO_MORE()).
+  mult(ONE_MORE_ORD(), ZERO_MORE()).
+  
+  // reflexive
+  mult(M, M).
   
   multLub : MULT * MULT -> MULT
   
@@ -258,19 +278,37 @@ rules // strategy lattice
   //                 |
   //            TIncremental()
   
+  stratOfStratList : list(Strategy) -> STRAT
+  stratOfStratList([x]) = stratOfStrat(x).
+  stratOfStratList([]) = INCREMENTAL(). // todo inherit from entity / module
+  
+  stratOfStrat : Strategy -> STRAT
+  stratOfStrat(Incremental()) = INCREMENTAL().
+  stratOfStrat(OnDemand()) = ONDEMAND().
+  stratOfStrat(OnDemandIncremental()) = ONDEMAND_INCREMENTAL().
+  stratOfStrat(Eventual()) = EVENTUAL().
+  stratOfStrat(OnDemandEventual()) = ONDEMAND_EVENTUAL().
+  // todo what about inline?
+  
   strat : STRAT * STRAT
   strat(INCREMENTAL(), ONDEMAND_INCREMENTAL()).
   strat(ONDEMAND_INCREMENTAL(), EVENTUAL()).
   strat(ONDEMAND_INCREMENTAL(), ONDEMAND()).
   strat(ONDEMAND(), ONDEMAND_EVENTUAL()).
   strat(EVENTUAL(), ONDEMAND_EVENTUAL()).
-  strat(S1, S2) :- { X } strat(S1, X), strat(X, S2).
+  
+  // transitive
+  strat(ONDEMAND_INCREMENTAL(), ONDEMAND_EVENTUAL()).
+  strat(INCREMENTAL(), EVENTUAL()).
+  strat(INCREMENTAL(), ONDEMAND()).
+  strat(INCREMENTAL(), ONDEMAND_EVENTUAL()).
+  
+  // reflexive
+  strat(S, S).
   
   stratLub : STRAT * STRAT -> STRAT
   stratLub(S, S) = S.
-  stratLub(S1, S2) = X :-
-    strat(S1, X),
-    strat(S2, X).
+  // todo write out
     
   materialization : STRAT * SIDE -> MATERIALIZATION
   
