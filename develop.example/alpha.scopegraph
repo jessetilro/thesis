@@ -1,8 +1,0 @@
-scope graph
-  #-s_1-1 {
-    relations {
-      statics!mod : "alpha"
-    }
-    edges {
-    }
-  }
