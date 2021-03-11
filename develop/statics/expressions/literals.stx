@@ -1,0 +1,12 @@
+module statics/expressions/literals
+
+imports statics/core
+
+rules
+
+  richTypeOfExp(_, Literal(Int(_))) = RICHTYPE(INT(), ONE(), INCREMENTAL()).
+  richTypeOfExp(_, Literal(Float(_))) = RICHTYPE(FLOAT(), ONE(), INCREMENTAL()).
+  richTypeOfExp(_, Literal(True())) = RICHTYPE(BOOLEAN(), ONE(), INCREMENTAL()).
+  richTypeOfExp(_, Literal(False())) = RICHTYPE(BOOLEAN(), ONE(), INCREMENTAL()).
+  richTypeOfExp(_, Literal(String(_))) = RICHTYPE(STRING(), ONE(), INCREMENTAL()).
+  richTypeOfExp(_, Literal(NoValue())) = RICHTYPE(NOVALUE(), ONE(), INCREMENTAL()).
