@@ -1,0 +1,29 @@
+module statics/expressions/multiplicity-operators
+
+imports statics/core
+
+rules
+
+  richTypeOfExp(s, e@ChoiceLeft(e1, e2)) = RICHTYPE(out_type, out_mult, out_strat) :-
+  { e1_type e1_mult e1_strat e2_type e2_mult e2_strat }
+    richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
+    richTypeOfExp(s, e2) == RICHTYPE(e2_type, e2_mult, e2_strat),
+    out_type == lubtype(e1_type, e2_type),
+    out_mult == choiceLeftMult(e1_mult, e2_mult),
+    out_strat == stratLub(e1_strat, e2_strat).
+    
+  richTypeOfExp(s, e@Merge(e1, e2)) = RICHTYPE(out_type, out_mult, out_strat) :-
+  { e1_type e1_mult e1_strat e2_type e2_mult e2_strat }
+    richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
+    richTypeOfExp(s, e2) == RICHTYPE(e2_type, e2_mult, e2_strat),
+    out_type == lubtype(e1_type, e2_type),
+    out_mult == mergeMult(e1_mult, e2_mult),
+    out_strat == stratLub(e1_strat, e2_strat).
+    
+  richTypeOfExp(s, e@Difference(e1, e2)) = RICHTYPE(out_type, out_mult, out_strat) :-
+  { e1_type e1_mult e1_strat e2_type e2_mult e2_strat }
+    richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
+    richTypeOfExp(s, e2) == RICHTYPE(e2_type, e2_mult, e2_strat),
+    out_type == lubtype(e1_type, e2_type),
+    out_mult == lowerboundZero(e1_mult),
+    out_strat == stratLub(e1_strat, e2_strat).

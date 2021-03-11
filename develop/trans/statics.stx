@@ -6,6 +6,7 @@ imports statics/core
 imports statics/expressions/literals
 imports statics/expressions/math
 imports statics/expressions/logic
+imports statics/expressions/multiplicity-operators
 
 rules // multi-file entry points
 
