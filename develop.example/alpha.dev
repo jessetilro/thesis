@@ -3,10 +3,12 @@ module alpha
 model
   
   entity Alpha {
-    test : Int = 1 + 2 (on-demand)
+    add : Int = 1 + 2 (on-demand)
     multiplication : Float = 2.0 / 0.0 (on-demand)
-    division : Float = 1.0 * (3 % 2 / 2) (on-demand)
-    bool : Boolean = not(true)
+    division : Float = 1 / (2 % 0) (on-demand)
+    str : String = "abc" + "123"
+    bool : Boolean = not(true) and (1.0 == 2.0) or ((1 != 2) and (4 < 3 or 1 >= 2))
+    conditional : Float = if (true) 1.0 else 2.0
   }
   
   entity Beta {

@@ -42,5 +42,6 @@ rules // models
   memberOk : scope * Member
   
   memberOk(s, DerivationAttribute(_, type, _, exp, _)) :- {declared}
-    typeOfExp(s, exp) == typeOfAnyType(s, type) | error $[the expression does not have the declared type]@exp.
+    typeOfExp(s, exp) == typeOfAnyType(s, type) | error $[the expression does not have the declared type]@exp,
+    @exp.type := richTypeOfExp(s, exp).
   
