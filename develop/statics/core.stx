@@ -17,6 +17,7 @@ signature
     DERIV
     ZERONESS
     MATERIALIZATION
+    INLINING
     SIDE
     
   constructors
@@ -56,6 +57,9 @@ signature
     
     MATERIALIZED : MATERIALIZATION
     NON_MATERIALIZED : MATERIALIZATION
+    
+    INLINE : INLINING
+    NOT_INLINE : INLINING
     
     LEFT : SIDE
     RIGHT : SIDE
