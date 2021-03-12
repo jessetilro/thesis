@@ -36,20 +36,45 @@ rules // models
   modelsOk maps modelOk(*, list(*))
   
   modelOk : scope * Model
+  
   modelOk(s, Entity(id, _, _, members)) :- { s_model s_resolve }
     new s_model, s_model -P-> s,
     declareEntity(s, id, s_model),
-    membersOk(s_model, members),
     resolveEntity(s_model, id) == ENTITY(s_resolve) | error $[duplicate definition of entity [id]]@id,
-    @id.type := ENTITY(s_resolve).
+    @id.type := ENTITY(s_resolve),
+    membersOk(s_model, members).
+    
+  modelOk(s, FirstClassRelation(id, _, _, members)) :- { s_model s_resolve } // identical to Entity
+    new s_model, s_model -P-> s,
+    declareEntity(s, id, s_model),
+    resolveEntity(s_model, id) == ENTITY(s_resolve) | error $[duplicate definition of entity [id]]@id,
+    @id.type := ENTITY(s_resolve),
+    membersOk(s_model, members).
     
   modelOk(s, Relation(id, _, _, _, _, _)).
     
   membersOk maps memberOk(*, list(*))
   memberOk : scope * Member
   
-  memberOk(s, DerivationAttribute(id, type, mult, exp, strat)) :-
+  memberOk(s, DerivationAttribute(id, type, mult, exp, Inline())) :-
   { declared decl_richtype e_type e_mult e_strat d_type d_mult d_strat }
+    RICHTYPE(e_type, e_mult, e_strat) == richTypeOfExp(s, exp),
+
+    d_type == typeOfAnyType(s, type),
+    d_mult == multOfMultOrdList(mult),
+    d_strat == e_strat, // inline attributes take the strategy from their expression, this strategy is the strongest strategy that the attribute can be inlined in.
+    
+    subtype(e_type, d_type) | error $[type mismatch: expected [d_type] got [e_type]]@exp,
+    mult(e_mult, d_mult) | error $[multiplicity mismatch: expected [d_mult] got [e_mult]]@exp,
+    
+    !member[id, RICHTYPE(d_type, d_mult, d_strat)] in s,
+    @id.inlining := INLINE(),
+    
+    @id.type := RICHTYPE(d_type, d_mult, d_strat),
+    @exp.type := RICHTYPE(e_type, e_mult, e_strat).
+  
+  memberOk(s, DerivationAttribute(id, type, mult, exp, strat)) :-
+  { declared decl_richtype e_type e_mult e_strat d_type d_mult d_strat rid }
     RICHTYPE(e_type, e_mult, e_strat) == richTypeOfExp(s, exp),
 
     d_type == typeOfAnyType(s, type),
@@ -61,6 +86,22 @@ rules // models
     strat(e_strat, d_strat) | error $[strategy mismatch: expected [d_strat] got [e_strat]]@exp,
     
     !member[id, RICHTYPE(d_type, d_mult, d_strat)] in s,
+    @id.inlining := NOT_INLINE(),
+    
     @id.type := RICHTYPE(d_type, d_mult, d_strat),
     @exp.type := RICHTYPE(e_type, e_mult, e_strat).
+    
+  memberOk(s, Attribute(id, type, mult)) :-
+  { declared decl_richtype e_type e_mult e_strat d_type d_mult d_strat rid }
+    d_type == typeOfPrimitiveType(type),
+    d_mult == multOfMultList(mult),
+    d_strat == INCREMENTAL(),
+    
+    !member[id, RICHTYPE(d_type, d_mult, d_strat)] in s,
+    @id.inlining := NOT_INLINE(),
+    @id.type := RICHTYPE(d_type, d_mult, d_strat)
+    // TODO: check override (inheritance)
+    .
+  
+  
   

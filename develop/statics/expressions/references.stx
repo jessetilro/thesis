@@ -7,7 +7,7 @@ rules
   richTypeOfExp(s, This()) = RICHTYPE(t, ONE(), INCREMENTAL()) :-
     resolveThis(s) == t.
     
-  richTypeOfExp(s, Ref(r)) = RICHTYPE(d_type, d_mult, d_strat) :- { richtype }
-    resolveMember(s, r) == richtype | error $[reference [r] cannot be resolved]@r,
-    richtype == RICHTYPE(d_type, d_mult, d_strat),
-    @r.type := richtype. // todo check materialization
+  richTypeOfExp(s, Ref(r)) = RICHTYPE(d_type, d_mult, d_strat) :- { id }
+    resolveMember(s, r) == (id, RICHTYPE(d_type, d_mult, d_strat)) | error $[reference [r] cannot be resolved]@r,
+    @r.type := RICHTYPE(d_type, d_mult, d_strat),
+    @r.ref := id. // todo check materialization

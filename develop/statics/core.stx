@@ -502,14 +502,14 @@ rules // name resolution
         min and true
         in s |-> [(_, (_, type))].
      
-  resolveMember : scope * ID -> RICHTYPE 
+  resolveMember : scope * ID -> (ID * RICHTYPE) 
       
-  resolveMember(s, id) = RICHTYPE(type, mult, strat) :-
+  resolveMember(s, id) = decl :-
     query member
       filter e and { x' :- x' == id }
         min and true
-        in s |-> [(_, (_, RICHTYPE(type, mult, strat)))|_].
+        in s |-> [(_, decl)|_].
         
   resolveThis : scope -> TYPE
         
-  resolveThis(s) = ENTITY(s). // todo actually declare this and resolve it
+  resolveThis(s) = ENTITY(s). // todo actually declare "this" and resolve it

@@ -11,7 +11,9 @@ model
     conditional : Float = if (true) 1.0 else 2.0
     cast : Float = 1 as Float
     test : Int ? = division as Int (on-demand)
-    fout : Int = 1
+    multiple : Int + = 1
+    aggregate : Int = avg(multiple) + add
+    attr : Float
   }
   
   entity Beta {
