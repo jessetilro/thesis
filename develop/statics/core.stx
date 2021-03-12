@@ -311,8 +311,29 @@ rules // strategy lattice
   strat(S, S).
   
   stratLub : STRAT * STRAT -> STRAT
-  stratLub(S, S) = S.
-  // todo write out
+  
+  // root
+  stratLub(ONDEMAND_EVENTUAL(), _) = ONDEMAND_EVENTUAL().
+  stratLub(_, ONDEMAND_EVENTUAL()) = ONDEMAND_EVENTUAL().
+  
+  // leaf
+  stratLub(INCREMENTAL(), S) = S.
+  stratLub(S, INCREMENTAL()) = S.
+  
+  // inner
+  stratLub(EVENTUAL(), ONDEMAND()) = ONDEMAND_EVENTUAL().
+  stratLub(ONDEMAND(), EVENTUAL()) = ONDEMAND_EVENTUAL().
+  
+  stratLub(ONDEMAND_INCREMENTAL(), EVENTUAL()) = EVENTUAL().
+  stratLub(EVENTUAL(), ONDEMAND_INCREMENTAL()) = EVENTUAL().
+  
+  stratLub(ONDEMAND(), ONDEMAND_INCREMENTAL()) = ONDEMAND().
+  stratLub(ONDEMAND_INCREMENTAL(), ONDEMAND()) = ONDEMAND().
+  
+  // identity
+  stratLub(ONDEMAND(), ONDEMAND()) = ONDEMAND().
+  stratLub(EVENTUAL(), EVENTUAL()) = EVENTUAL().
+  stratLub(ONDEMAND_INCREMENTAL(), ONDEMAND_INCREMENTAL()) = ONDEMAND_INCREMENTAL().
     
   materialization : STRAT * SIDE -> MATERIALIZATION
   
