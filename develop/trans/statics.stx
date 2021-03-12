@@ -9,6 +9,7 @@ imports statics/expressions/logic
 imports statics/expressions/multiplicity-operators
 imports statics/expressions/casts
 imports statics/expressions/references
+imports statics/expressions/functions
 
 rules // multi-file entry points
 

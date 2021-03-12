@@ -4,6 +4,8 @@ imports statics/core
 
 rules
 
+  // TODO: deduplicate
+
   richTypeOfExp(s, e@Not(e1)) = RICHTYPE(out_type, out_mult, out_strat) :-
     richTypeOfExp(s, e1) == RICHTYPE(out_type, out_mult, out_strat),
     isBoolean(out_type).
@@ -39,7 +41,7 @@ rules
     multupper(e1_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e1_mult]]@e1,
     multupper(e2_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e2_mult]]@e2.
     
-  richTypeOfExp(s, e@LessThanEqual(e1, e2)) = RICHTYPE(BOOLEAN(), out_mult, out_strat) :-
+  richTypeOfExp(s, e@LessThanEqual(e1, e2)) = RICHTYPE(BOOLEAN(), out_mult, out_strat) :- // identical to LessThan
   { e1_type e1_mult e1_strat e2_type e2_mult e2_strat out_type }
     richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
     richTypeOfExp(s, e2) == RICHTYPE(e2_type, e2_mult, e2_strat),
@@ -50,7 +52,7 @@ rules
     multupper(e1_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e1_mult]]@e1,
     multupper(e2_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e2_mult]]@e2.
     
-  richTypeOfExp(s, e@GreaterThan(e1, e2)) = RICHTYPE(BOOLEAN(), out_mult, out_strat) :-
+  richTypeOfExp(s, e@GreaterThan(e1, e2)) = RICHTYPE(BOOLEAN(), out_mult, out_strat) :- // identical to LessThan
   { e1_type e1_mult e1_strat e2_type e2_mult e2_strat out_type }
     richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
     richTypeOfExp(s, e2) == RICHTYPE(e2_type, e2_mult, e2_strat),
@@ -61,7 +63,7 @@ rules
     multupper(e1_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e1_mult]]@e1,
     multupper(e2_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e2_mult]]@e2.
     
-  richTypeOfExp(s, e@GreaterThanEqual(e1, e2)) = RICHTYPE(BOOLEAN(), out_mult, out_strat) :-
+  richTypeOfExp(s, e@GreaterThanEqual(e1, e2)) = RICHTYPE(BOOLEAN(), out_mult, out_strat) :- // identical to LessThan
   { e1_type e1_mult e1_strat e2_type e2_mult e2_strat out_type }
     richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
     richTypeOfExp(s, e2) == RICHTYPE(e2_type, e2_mult, e2_strat),
@@ -83,7 +85,7 @@ rules
     multupper(e1_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e1_mult]]@e1,
     multupper(e2_mult) == UONE() | error $[Multiplicity mismatch: expected One or ZeroOrOne got [e2_mult]]@e2.
     
-  richTypeOfExp(s, e@Or(e1, e2)) = RICHTYPE(BOOLEAN(), out_mult, out_strat) :-
+  richTypeOfExp(s, e@Or(e1, e2)) = RICHTYPE(BOOLEAN(), out_mult, out_strat) :- // identical to And
   { e1_type e1_mult e1_strat e2_type e2_mult e2_strat out_type }
     richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
     richTypeOfExp(s, e2) == RICHTYPE(e2_type, e2_mult, e2_strat),

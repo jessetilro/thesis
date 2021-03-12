@@ -427,6 +427,15 @@ rules // types
   canDivide(INT()).
   canDivide(NOVALUE()).
   
+  // TODO: check if still necessary, maybe not due to difference between statix and nabl2 
+  isType : TYPE
+  isType(BOOLEAN()).
+  isType(DATETIME()).
+  isType(FLOAT()).
+  isType(INT()).
+  isType(STRING()).
+  isType(NOVALUE()).
+  
 rules // type checking
 
   typeOfExp : scope * Exp -> TYPE

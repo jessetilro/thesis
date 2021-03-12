@@ -1,0 +1,96 @@
+module statics/expressions/functions
+
+imports statics/core
+
+rules
+  
+  // original note:
+  //TODO: Move all function signatures to root-scope, and make a single Function() rule.
+  //      However, we need to wait till NaBL2 supports overload resolution.
+  
+  // current solutions:
+  // - overloading
+  // - custom predicates
+  
+  richTypeOfExp(s, Function("min", [e1])) = RICHTYPE(e1_type, out_mult, e1_strat) :- { e1_mult }
+    richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
+    canCompare2(e1_type),
+    out_mult == upperboundOne(e1_mult),
+    multupper(e1_mult) == UMANY() | error $[Expected multiplicity of higher than One]@e1.
+    
+  richTypeOfExp(s, Function("max", [e1])) = RICHTYPE(e1_type, out_mult, e1_strat) :- { e1_mult } // identical to min
+    richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
+    canCompare2(e1_type),
+    out_mult == upperboundOne(e1_mult),
+    multupper(e1_mult) == UMANY() | error $[Expected multiplicity of higher than One]@e1.
+    
+  richTypeOfExp(s, Function("avg", [e1])) = RICHTYPE(e1_type, out_mult, e1_strat) :- { e1_mult }
+    richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
+    isNumeric(e1_type),
+    out_mult == upperboundOne(e1_mult),
+    multupper(e1_mult) == UMANY() | error $[Expected multiplicity of higher than One]@e1.
+    
+  richTypeOfExp(s, Function("sum", [e1])) = RICHTYPE(e1_type, ONE(), e1_strat) :- { e1_mult }
+    richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
+    isNumeric(e1_type),
+    multupper(e1_mult) == UMANY() | error $[Expected multiplicity of higher than One]@e1.
+    
+  richTypeOfExp(s, Function("conj", [e1])) = RICHTYPE(e1_type, ONE(), e1_strat) :- { e1_mult }
+    richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
+    isBoolean(e1_type),
+    multupper(e1_mult) == UMANY() | error $[Expected multiplicity of higher than One]@e1.
+    
+  richTypeOfExp(s, Function("disj", [e1])) = RICHTYPE(e1_type, ONE(), e1_strat) :- { e1_mult } // identical to conj
+    richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
+    isBoolean(e1_type),
+    multupper(e1_mult) == UMANY() | error $[Expected multiplicity of higher than One]@e1.
+    
+  richTypeOfExp(s, Function("concat", [e1])) = RICHTYPE(e1_type, ONE(), e1_strat) :- { e1_mult }
+    richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
+    isString(e1_type),
+    multupper(e1_mult) == UMANY() | error $[Expected multiplicity of higher than One]@e1.
+    
+  richTypeOfExp(s, Function("count", [e1])) = RICHTYPE(INT(), ONE(), e1_strat) :- { e1_type e1_mult }
+    richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
+    isType(e1_type).
+    
+  richTypeOfExp(s, Function("first", [e1])) = RICHTYPE(e1_type, out_mult, e1_strat) :- { e1_mult }
+    richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
+    out_mult == upperboundOne(e1_mult),
+    multupper(e1_mult) == UMANY() | error $[Expected multiplicity of higher than One]@e1. // TODO: should be warning
+    
+  richTypeOfExp(s, Function("first", [e1, e2])) = RICHTYPE(e1_type, e1_mult, e1_strat) :- { e2_type e2_mult e2_strat out_mult }
+    richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
+    richTypeOfExp(s, e2) == RICHTYPE(e2_type, e2_mult, e2_strat),
+    multupper(e1_mult) == UMANY() | error $[Expected multiplicity of higher than One]@e1,
+    e2_type == INT() | error $[Type mismatch: expected Integer got [e2_type]]@e2,
+    e2_mult == ONE() | error $[Multiplicity mismatch: expected One got [e2_type]]@e2,
+    out_mult == upperboundOne(e1_mult). // TODO: check why this was not used
+    
+  richTypeOfExp(s, Function("elemAt", [e1, e2])) = RICHTYPE(e1_type, ZERO_ONE(), out_strat) :- { e1_mult e1_strat e2_type e2_mult e2_strat }
+    richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
+    richTypeOfExp(s, e2) == RICHTYPE(e2_type, e2_mult, e2_strat),
+    e2_type == INT() | error $[Type mismatch: expected Integer got [e2_type]]@e2,
+    multupper(e2_mult) == UMANY() | error $[Expected multiplicity of higher than One]@e2,
+    out_strat == stratLub(e1_strat, e2_strat).
+    
+  richTypeOfExp(s, Function("indexOf", [e1, e2])) = RICHTYPE(INT(), ZERO_ONE(), out_strat) :- { e1_type e1_mult e1_strat e2_type e2_mult e2_strat }
+    richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
+    richTypeOfExp(s, e2) == RICHTYPE(e2_type, e2_mult, e2_strat),
+    e1_type == e2_type | error $[Type mismatch: expected [e1_type] got [e2_type]]@e2,
+    multupper(e2_mult) == UONE() | error $[Multiplicity mismatch: Expected One or ZeroOrOne got [e2_mult]]@e2,
+    out_strat == stratLub(e1_strat, e2_strat).
+    
+  // TODO: check this
+  // Catch all: in statix, as opposed to nabl2, no longer depends on ordering within file.
+  // Instead, is more general, so only matches if no more specific head of a rule matches.
+  
+  richTypeOfExp(s, Function(f, es)) = RICHTYPE(f_def_type, out_mult, out_strat) :-
+    // TODO: implement function name resolution
+    f_def_type == INT(),
+    out_mult == ONE(),
+    out_strat == INCREMENTAL()
+    .
+   
+  // TODO: implement PairwiseEqual here
+    
