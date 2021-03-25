@@ -3,7 +3,9 @@ module alpha
 model
   
   entity Alpha {
-    add : Int = 1 + 2
+    input : Int
+  
+    add : Int = 0 + 0
     division : Float ? = 2.0 / 0.0 (on-demand)
     modulo : Float ? = 1 / (2 % 0) (on-demand)
     str : String = "abc" + "123"
@@ -12,12 +14,14 @@ model
     cast : Float = 1 as Float
     test : Int ? = division as Int (on-demand)
     multiple : Int + = 1
-    aggregate : Int = avg(multiple) + add
-    attr : Float
+    aggregate : Int = avg(multiple) + add (incremental)
+    attr : Float ?
+    
+    f : Float = division <+ 0.0 (on-demand)
   }
   
   entity Beta {
     number : Int = 1
   }
   
-  relation Alpha.beta <-> Beta.alpha
+  relation Alpha.beta 1 <-> Beta.alpha

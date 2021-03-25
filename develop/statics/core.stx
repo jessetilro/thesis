@@ -96,6 +96,12 @@ rules // multiplicity/ordering lattice
   multOfMult(OneOrMore()) = ONE_MORE().
   multOfMult(ZeroOrMore()) = ZERO_MORE().
   
+  multOfSpaceMultList : list(SpaceMultiplicity) -> MULT
+  multOfSpaceMultList([]) = ONE().
+  
+  multOfSpaceMultiplicity : SpaceMultiplicity -> MULT
+  multOfSpaceMultiplicity(MultiplicityOrdering2SpaceMultiplicity(x)) = multOfMultOrd(x).
+  
   multOfMultOrdList : list(MultiplicityOrdering) -> MULT
   
   multOfMultOrdList([x]) = multOfMultOrd(x).

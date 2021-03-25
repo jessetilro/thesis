@@ -51,12 +51,20 @@ rules // models
     @id.type := ENTITY(s_resolve),
     membersOk(s_model, members).
     
-  modelOk(s, Relation(id, _, _, _, _, _)).
+  modelOk(s, Relation(e1, r1, m1_optional, m2_optional, e2, r2)) :-
+    { s_e1 s_e2 s_r1 s_r2 m1 m2 id1 }
+    ENTITY(s_e1) == resolveEntity(s, e1) | error $[entity [e1] is not declared],
+    ENTITY(s_e2) == resolveEntity(s, e2) | error $[entity [e2] is not declared],
+    m1 == multOfSpaceMultList(m1_optional),
+    m2 == multOfSpaceMultList(m2_optional),
+    r1 == [ID2DotID(id1)],
+    new s_r1,
+    !member[id1, RICHTYPE(ENTITY(s_e2), m1, INCREMENTAL())] in s_r1.
     
   membersOk maps memberOk(*, list(*))
   memberOk : scope * Member
   
-  memberOk(s, DerivationAttribute(id, type, mult, exp, Inline())) :-
+  memberOk(s, DerivationAttribute(id, type, mult, exp, [Inline()])) :-
   { declared decl_richtype e_type e_mult e_strat d_type d_mult d_strat }
     RICHTYPE(e_type, e_mult, e_strat) == richTypeOfExp(s, exp),
 
