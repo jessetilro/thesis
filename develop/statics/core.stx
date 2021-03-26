@@ -6,6 +6,7 @@ signature
 
   relations
     entity : ID -> TYPE
+    entity_extension : ID * scope
     member : ID -> RICHTYPE
     
   sorts
@@ -73,6 +74,8 @@ signature
       P // parent
       S // requires a J to be wellformed
       // N // no edge at all (used for inverse querying)
+      // new experimental labels, inspired by webdsl
+      EXTEND
   
 rules // multiplicity/ordering lattice
 
@@ -512,10 +515,17 @@ rules // name resolution
       
   resolveMember(s, id) = decl :-
     query member
-      filter e and { x' :- x' == id }
+      filter P* J* and { x' :- x' == id }
         min and true
         in s |-> [(_, decl)|_].
         
   resolveThis : scope -> TYPE
         
   resolveThis(s) = ENTITY(s). // todo actually declare "this" and resolve it
+  
+rules // partial classes / extension
+  
+  extendScopes maps extendScope(list(*), *)
+  extendScope : (path * (string * scope)) * scope
+  extendScope((_, (_, s)), s). // extension is not reflexive
+  extendScope((_, (_, s')), s) :- s -EXTEND-> s'.
