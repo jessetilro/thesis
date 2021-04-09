@@ -18,6 +18,8 @@ model
     attr : Float ?
     
     f : Float = division <+ 0.0 (on-demand)
+    
+    test : Int = beta
   }
   
   entity Beta {

@@ -42,8 +42,8 @@ rules // models
     declareEntity(s, id, s_model),
     resolveEntity(s_model, id) == ENTITY(s_resolve) | error $[duplicate definition of entity [id]]@id,
     @id.type := ENTITY(s_resolve),
-    membersOk(s_model, members),
-    resolveMember(s_model, "test") == rtype | error $[test attribute should be declared].
+    extendScopes(resolveEntityExtensions(s, id), s_model),
+    membersOk(s_model, members).
     
   modelOk(s, FirstClassRelation(id, _, _, members)) :- { s_model s_resolve } // identical to Entity
     new s_model, s_model -P-> s,
@@ -60,8 +60,10 @@ rules // models
     m2 == multOfSpaceMultList(m2_optional),
     r1 == [ID2DotID(id1)],
     new s_r1,
+    s_r1 -EXTEND-> s_e1,
+    s_r1 -P-> s,
     !member[id1, RICHTYPE(ENTITY(s_e2), m1, INCREMENTAL())] in s_r1,
-    s_r1 -J-> s_e1.
+    !entity_extension[e1, s_r1] in s.
     
   membersOk maps memberOk(*, list(*))
   memberOk : scope * Member

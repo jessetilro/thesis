@@ -1,1 +1,13 @@
 module beta
+
+model
+
+  entity X {
+    xnum : Int = y.ynum
+  }
+  
+  entity Y {
+    ynum : Int = 0
+  }
+  
+  relation X.y <-> Y.x

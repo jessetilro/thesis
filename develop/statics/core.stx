@@ -510,12 +510,20 @@ rules // name resolution
       filter P* and { x' :- x' == id }
         min and true
         in s |-> [(_, (_, type))].
+        
+  resolveEntityExtensions : scope * ID -> list((path * (string * scope)))
+     
+  resolveEntityExtensions(s, id) = ps :-
+    query entity_extension
+      filter P* and { x' :- x' == (id, _) }
+        min and true
+        in s |-> ps.
      
   resolveMember : scope * ID -> (ID * RICHTYPE) 
       
   resolveMember(s, id) = decl :-
     query member
-      filter P* J* and { x' :- x' == id }
+      filter I* EXTEND? and { x' :- x' == id }
         min and true
         in s |-> [(_, decl)|_].
         
