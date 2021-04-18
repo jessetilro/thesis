@@ -2,8 +2,12 @@ module beta
 
 model
 
-  entity X {
-    xnum : Int = y.ynum
+  entity Super {
+    super : Int = 42
+  }
+
+  entity X extends Super {
+    xnum : Int = y.ynum + super
   }
   
   entity Y {

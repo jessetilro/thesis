@@ -37,16 +37,17 @@ rules // models
   
   modelOk : scope * Model
   
-  modelOk(s, Entity(id, _, _, members)) :- { s_model s_resolve rtype }
-    new s_model, s_model -P-> s,
+  modelOk(s, Entity(id, optional_parent, _, members)) :- { s_model s_resolve rtype }
+    new s_model, s_model -PARENT-> s,
     declareEntity(s, id, s_model),
     resolveEntity(s_model, id) == ENTITY(s_resolve) | error $[duplicate definition of entity [id]]@id,
     @id.type := ENTITY(s_resolve),
     extendScopes(resolveEntityExtensions(s, id), s_model),
-    membersOk(s_model, members).
+    membersOk(s_model, members),
+    declareInheritance(s_model, optional_parent).
     
   modelOk(s, FirstClassRelation(id, _, _, members)) :- { s_model s_resolve } // identical to Entity
-    new s_model, s_model -P-> s,
+    new s_model, s_model -PARENT-> s,
     declareEntity(s, id, s_model),
     resolveEntity(s_model, id) == ENTITY(s_resolve) | error $[duplicate definition of entity [id]]@id,
     @id.type := ENTITY(s_resolve),
