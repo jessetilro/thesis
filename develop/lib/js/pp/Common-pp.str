@@ -1,0 +1,172 @@
+module js/pp/Common-pp
+
+imports
+  libstratego-gpp
+  libspoofax/sdf/pp
+  libspoofax/term/origin
+  libstratego-sglr
+  js/signatures/Common-sig
+
+
+strategies
+  prettyprint-example =
+    prettyprint-javascript
+
+  prettyprint-javascript =
+    fail
+
+  prettyprint-javascript(|sort) =
+    fail
+
+
+strategies
+  prettyprint-SDF-start-symbols =
+    prettyprint-javascript-start-symbols
+
+  prettyprint-javascript-start-symbols =
+    fail
+
+
+strategies
+  prettyprint-javascript =
+    prettyprint-javascript-ID
+
+  prettyprint-javascript =
+    prettyprint-javascript-INT
+
+  prettyprint-javascript =
+    prettyprint-javascript-FLOAT
+
+  prettyprint-javascript =
+    prettyprint-javascript-STRING
+
+  prettyprint-javascript =
+    prettyprint-javascript-StringChar
+
+  prettyprint-javascript =
+    prettyprint-javascript-AltStringChar
+
+  prettyprint-javascript =
+    prettyprint-javascript-BackSlashChar
+
+  prettyprint-javascript =
+    prettyprint-javascript-CommentChar
+
+  prettyprint-javascript =
+    prettyprint-javascript-InsideComment
+
+  prettyprint-javascript =
+    prettyprint-javascript-NewLineEOF
+
+  prettyprint-javascript =
+    prettyprint-javascript-EOF
+
+  prettyprint-javascript(|sort):
+    t -> <prettyprint-javascript-ID>
+    where <?"ID"> sort
+
+  prettyprint-javascript(|sort):
+    t -> <prettyprint-javascript-INT>
+    where <?"INT"> sort
+
+  prettyprint-javascript(|sort):
+    t -> <prettyprint-javascript-FLOAT>
+    where <?"FLOAT"> sort
+
+  prettyprint-javascript(|sort):
+    t -> <prettyprint-javascript-STRING>
+    where <?"STRING"> sort
+
+  prettyprint-javascript(|sort):
+    t -> <prettyprint-javascript-StringChar>
+    where <?"StringChar"> sort
+
+  prettyprint-javascript(|sort):
+    t -> <prettyprint-javascript-AltStringChar>
+    where <?"AltStringChar"> sort
+
+  prettyprint-javascript(|sort):
+    t -> <prettyprint-javascript-BackSlashChar>
+    where <?"BackSlashChar"> sort
+
+  prettyprint-javascript(|sort):
+    t -> <prettyprint-javascript-CommentChar>
+    where <?"CommentChar"> sort
+
+  prettyprint-javascript(|sort):
+    t -> <prettyprint-javascript-InsideComment>
+    where <?"InsideComment"> sort
+
+  prettyprint-javascript(|sort):
+    t -> <prettyprint-javascript-NewLineEOF>
+    where <?"NewLineEOF"> sort
+
+  prettyprint-javascript(|sort):
+    t -> <prettyprint-javascript-EOF>
+    where <?"EOF"> sort
+
+  prettyprint-javascript-ID =
+    ![S(<is-string>)]
+
+  prettyprint-javascript-INT =
+    ![S(<is-string>)]
+
+  prettyprint-javascript-FLOAT =
+    ![S(<is-string>)]
+
+  prettyprint-javascript-STRING =
+    ![S(<is-string>)]
+
+  prettyprint-javascript-StringChar =
+    ![S(<is-string>)]
+
+  prettyprint-javascript-AltStringChar =
+    ![S(<is-string>)]
+
+  prettyprint-javascript-BackSlashChar =
+    ![S(<is-string>)]
+
+  prettyprint-javascript-CommentChar =
+    ![S(<is-string>)]
+
+  prettyprint-javascript-InsideComment =
+    ![S(<is-string>)]
+
+  prettyprint-javascript-NewLineEOF =
+    ![S(<is-string>)]
+
+  prettyprint-javascript-EOF =
+    ![S(<is-string>)]
+
+  prettyprint-javascript-ID :
+    amb([h|hs]) -> <prettyprint-javascript-ID> h
+
+  prettyprint-javascript-INT :
+    amb([h|hs]) -> <prettyprint-javascript-INT> h
+
+  prettyprint-javascript-FLOAT :
+    amb([h|hs]) -> <prettyprint-javascript-FLOAT> h
+
+  prettyprint-javascript-STRING :
+    amb([h|hs]) -> <prettyprint-javascript-STRING> h
+
+  prettyprint-javascript-StringChar :
+    amb([h|hs]) -> <prettyprint-javascript-StringChar> h
+
+  prettyprint-javascript-AltStringChar :
+    amb([h|hs]) -> <prettyprint-javascript-AltStringChar> h
+
+  prettyprint-javascript-BackSlashChar :
+    amb([h|hs]) -> <prettyprint-javascript-BackSlashChar> h
+
+  prettyprint-javascript-CommentChar :
+    amb([h|hs]) -> <prettyprint-javascript-CommentChar> h
+
+  prettyprint-javascript-InsideComment :
+    amb([h|hs]) -> <prettyprint-javascript-InsideComment> h
+
+  prettyprint-javascript-NewLineEOF :
+    amb([h|hs]) -> <prettyprint-javascript-NewLineEOF> h
+
+  prettyprint-javascript-EOF :
+    amb([h|hs]) -> <prettyprint-javascript-EOF> h

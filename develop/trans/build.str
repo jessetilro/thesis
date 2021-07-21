@@ -1,8 +1,42 @@
 module build
 
-rules
+imports // backends
 
-  build: (selected, position, ast, path, project-path) -> (filename, result)
+  generating/java
+
+imports // functions
+
+//  api/config-api
+  api/module-api
+//  lib/index
+
+rules // builders
+
+  
+
+  build(error-handler): (selected, position, ast, path, project-path) -> (filename, result)
     with
-      filename := <guarantee-extension(|"build.aterm")> path;
-      result := <id> ast
+      filename := <guarantee-extension(|"build.aterm")> path
+    with
+      moduleName  := <module-get-modulename>selected;
+      backend     := JavaBackend(Execute());
+      result      := <build(error-handler|backend, moduleName, path) <+ backend-not-enabled(|backend)>selected
+      
+rules // builders
+
+  build      = build(error-handler-editor)
+  build-test = build(error-handler-tests)
+      
+  build(error-handler|backend, moduleName, relativePath) = fail // implemented by backends
+  
+  backend-not-enabled(|backend) = !$[The backend [<write-to-string>backend] is not enabled.];debug
+
+rules // Error handlers (editor: report error, do not fail, tests: fail with error)
+
+  error-handler-editor : msg -> ("ERROR_PLACEHOLDER", msg)
+    with
+      err-msg(|msg)
+
+  error-handler-tests : msg -> None()
+    with
+      with(fail|msg)

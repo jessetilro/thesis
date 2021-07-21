@@ -1,0 +1,41 @@
+module api/module-api
+
+imports // constructors
+  
+  signatures/Modules-sig
+  
+imports
+
+  lib/origin
+  lib/traverse
+  
+rules
+
+  is-module = ?Module(_, _, _)
+
+  module-get-modulename = ?Module(<id>, _, _)
+  module-get-strategy   = ?Module(_, <id>, _)
+  module-get-sections   = ?Module(_, _, <id>)
+  
+  module-set-strategy(s) = Module(id, s, id)
+  module-set-sections(s) = ?m;Module(id, id, s);custom-origin(|m)
+
+  module-has-no-strategy = where(module-get-strategy;?None())
+  
+rules
+  
+  module-get-exprs = module-get-sections;filter(is-execute);fmap(execute-get-exprs)
+  
+rules
+
+  is-execute = ?ExecuteSection(_)
+  
+  execute-get-exprs = ?ExecuteSection(<id>)
+
+rules
+
+  module-get-config-sections = module-get-sections;filter(?ConfigSection(_))
+  module-get-config-section  = module-get-config-sections;Hd
+
+  module-has-no-config-section = where(module-get-config-sections;?[])
+  

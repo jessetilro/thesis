@@ -16,3 +16,5 @@
 
 *.aterm
 *.scopegraph
+*.java
+*.class

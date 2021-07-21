@@ -41,3 +41,6 @@ language:
 exports:
 - language: ATerm
   directory: src-gen/statix
+- directory: ./
+  includes:
+    - lib-java/**/*

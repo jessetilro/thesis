@@ -1,0 +1,167 @@
+module generating/webdsl/module-derivations
+
+imports // constructors
+
+  webdsl/constructors
+  webdsl/WebDSL
+//  desugaring/constructors
+  signatures/Types-sig
+  analysis2/path
+  tiersplit/constructors
+
+imports // functions
+  
+  generating/_ir/model 
+  generating/webdsl/module-ui
+  generating/webdsl/model
+  generating/webdsl/data
+  generating/webdsl/types
+  api/model-names-api
+  api/module-api
+  api/module-names-api
+  lib/lists-tuples
+  lib/string
+
+rules // derivations
+  
+  attributename-to-webdsl-def: x_attributeName -> result
+    with
+      x_entityName := <attributename-get-entityname>x_attributeName;
+      x_dirty      := <attributename-entityname-dirty>x_attributeName
+    with
+      result := def |[
+        request var x_dirty := Set<x_entityName>()
+      ]|
+      
+  attributename-to-webdsl-stat: x_attributeName -> result
+    with
+      x_entityName                := <attributename-get-entityname>x_attributeName;
+      x_flagAttributeDirtyAsync   := <name-flagdirtyasync>x_attributeName
+    with
+      result := stat |[
+        x_entityName.x_flagAttributeDirtyAsync();
+      ]|
+      
+  attributename-to-webdsl-natives: x_attributeName -> result
+    with
+      x_attributeGetQueue := <attributename-entityname-getqueue>x_attributeName;
+      x_attributePoll     := <attributename-entityname-poll>x_attributeName
+    with
+      result := native* |[
+        static x_attributeGetQueue() : Set<String>
+        static x_attributePoll() : String
+      ]|
+
+rules
+  
+  cache-modulename-to-webdsl-stms: x_moduleName -> result
+    with
+      namess := <modulename-get-arrinames-topo-default-derivation-incremental>x_moduleName;
+      stat_updat* := <fmap(cache-attributenames-to-webdsl-stms)>namess
+    with
+      result := stat* |[
+        var notEmpty : Bool;
+        stat_updat*
+      ]|
+      
+  cache-attributenames-to-webdsl-stms: attributeNames -> result
+    with
+      stat_updat* := <map(cache-attributename-to-webdsl-stm-update)>attributeNames;
+      stat_empty* := <map(cache-attributename-to-webdsl-stm-empty)>attributeNames
+    with
+      result := stat* |[
+        notEmpty := true;
+        while(notEmpty){
+          stat_updat*
+          notEmpty := false;
+          stat_empty*
+        }
+      ]|
+      
+  cache-attributename-to-webdsl-stm-update: x_attributeName -> result
+    with
+      x_entityName              := <attributename-get-entityname>x_attributeName;
+      x_updateAllAttributeCache := <name-updateallcache>x_attributeName
+    with
+      result := stat |[
+        x_entityName.x_updateAllAttributeCache();
+      ]|
+      
+  cache-attributename-to-webdsl-stm-empty: x_attributeName -> result
+    with
+      x_entityName              := <attributename-get-entityname>x_attributeName;
+      x_hasDirty                := <name-hasdirty>x_attributeName
+    with
+      result := stat |[
+        notEmpty := notEmpty || x_entityName.x_hasDirty();
+      ]|
+
+rules
+  
+  cache-async-modulename-to-webdsl-stms: x_moduleName -> result
+    with
+      namess      := <modulename-get-arrinames-topo-default-derivation-eventual>x_moduleName;
+      stat_updat* := <fmap(cache-async-attributenames-to-webdsl-stms)>namess
+    with
+      result := stat* |[
+        stat_updat*
+      ]|
+  
+  cache-async-attributenames-to-webdsl-stms: names -> result
+    with
+      x_attributeName := <Hd>names // take the fist name to figure out the toposort
+    with
+      x_topoSort  := <(name-get-toposort<+!0);int-to-string>x_attributeName;
+      stat_updat* := <fmap(cache-async-attributename-to-webdsl-stms)>names
+    with
+      result := stat* |[
+        DirtyCollections.cleanI(x_topoSort);
+        if(DirtyCollections.getI()<=x_topoSort){
+          stat_updat*
+          DirtyCollections.setJ(1);
+          if(countDirty(x_topoSort)>0){
+            return; // figured out this group is not done yet, so go back to start of function
+          }
+        }
+      ]|
+  
+  cache-async-attributename-to-webdsl-stms: x_attributeName -> result
+    with
+      x_entityName                   := <attributename-get-entityname>x_attributeName;
+      x_updateOneAttributeCacheAsync := <name-updateonecacheasync>x_attributeName;
+      x_hasDirtyAsync                := <name-hasdirtyasync>x_attributeName;
+      x_topoSort2                    := <(name-get-toposort2<+!0);int-to-string>x_attributeName
+    with
+      result := stat* |[
+        if(DirtyCollections.getJ()==x_topoSort2){
+          if(x_entityName.x_hasDirtyAsync()){
+            x_entityName.x_updateOneAttributeCacheAsync(thisThread);
+            return; // did one thing, so go back to start of function
+          }
+          DirtyCollections.setJ(x_topoSort2+1);
+        }
+      ]|
+      
+rules
+  
+  countdirtyuptill-attributename-to-webdsl-stm: x_attributeName -> result
+    with
+      x_getQueue := <attributename-entityname-getqueue>x_attributeName;
+      x_topoSort := <(name-get-toposort<+!0);int-to-string>x_attributeName
+    with
+      result := stat* |[
+        if(ii >= x_topoSort){
+          n := n + DirtyCollections.x_getQueue().length;
+        }
+      ]|
+  
+  countdirty-attributename-to-webdsl-stm: x_attributeName -> result
+    with
+      x_getQueue := <attributename-entityname-getqueue>x_attributeName;
+      x_topoSort := <(name-get-toposort<+!0);int-to-string>x_attributeName
+    with
+      result := stat* |[
+        if(ii == x_topoSort){
+          n := n + DirtyCollections.x_getQueue().length;
+        }
+      ]|

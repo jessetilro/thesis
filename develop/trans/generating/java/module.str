@@ -1,0 +1,38 @@
+module generating/java/module
+
+imports // constructors
+
+  java/Java
+  signatures/Modules-sig  
+//  desugaring/constructors
+
+imports // functions
+
+//  api/module-names-api
+//  generating/_ir/model
+//  generating/java/data
+//  generating/java/execute
+//  generating/java/functions
+//  generating/java/model
+
+rules
+
+  modulename-to-java-compilationunit(err): x_moduleName -> result
+//    with
+//      modelJava*   := <modulename-get-entitynames;map(model-entityname-to-java-typedec(err))>x_moduleName;
+//      dataJava*    := <data-modulename-to-java-stms(err)>x_moduleName;
+//      executeJava* := <modulename-get-exprs;map(execute-expr-to-java-stm(err))>x_moduleName;
+//      cacheJava*   := <cache-modulename-to-java-stms>x_moduleName;
+//      logJava      := <logincremental-modulename-to-java-stm>x_moduleName;
+//      functionJava*:= <modulename-get-functionnames;fmap(functionname-to-java-classbodydecs(err))>x_moduleName
+    with
+      result := compilation-unit |[        
+        class x_moduleName  
+        { 
+          public static void main(String[] args)
+          {
+            System.out.println("Hello world!");
+          }
+        }
+      ]|
+
