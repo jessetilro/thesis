@@ -19,7 +19,7 @@ model
     
     f : Float = division <+ 0.0 (on-demand)
     
-    test : Int = beta
+    test : Int = beta.number
   }
   
   entity Beta {

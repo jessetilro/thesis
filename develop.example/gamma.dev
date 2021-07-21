@@ -1,0 +1,7 @@
+module gamma
+
+model
+
+  entity Entity {
+    attr : Int = 42
+  }

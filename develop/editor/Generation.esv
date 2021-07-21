@@ -1,0 +1,7 @@
+module Generation
+
+menus
+
+  menu: "Generation"
+    action: "Build" = build (openeditor)
+    action: "Cleanup Generated Code" = cleanup-generated-files
