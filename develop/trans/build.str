@@ -1,5 +1,9 @@
 module build
 
+imports
+
+  signatures/Config-sig
+
 imports // backends
 
   generating/java
@@ -9,6 +13,7 @@ imports // functions
 //  api/config-api
   api/module-api
 //  lib/index
+  api/statix
 
 rules // builders
 
@@ -16,7 +21,10 @@ rules // builders
 
   build(error-handler): (selected, position, ast, path, project-path) -> (filename, result)
     with
-      filename := <guarantee-extension(|"build.aterm")> path
+      <store-analysis-resource>$[[project-path]/[path]];
+      analysis := <get-stored-analysis>
+    with
+      filename := <guarantee-extension(|"output.txt")> path
     with
       moduleName  := <module-get-modulename>selected;
       backend     := JavaBackend(Execute());

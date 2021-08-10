@@ -27,12 +27,39 @@ rules
 //      functionJava*:= <modulename-get-functionnames;fmap(functionname-to-java-classbodydecs(err))>x_moduleName
     with
       result := compilation-unit |[        
+        import lib.icedust.*;
+        import java.util.ArrayList;
+        import java.util.Collection;
+        import java.util.Comparator;
+        import java.util.Date;
+        import java.util.HashSet;
+        import javax.lang.model.type.NullType;
+        
         class x_moduleName  
         { 
           public static void main(String[] args)
           {
-            System.out.println("Hello world!");
+//            ~dataJava*
+//            maintainCaches();
+//            ~executeJava*
+              System.out.println("Hello world!");
+          }
+          
+          private static void maintainCaches() {
+//            ~cacheJava* // empty if calc-on-read
           }
         }
+        
+        class _IceDustSettings
+        {
+//          ~logJava;
+        }
+
+        class _Functions
+        {
+//          ~functionJava*;
+        }
+        
+//        ~modelJava*
       ]|
 

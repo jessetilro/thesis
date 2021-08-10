@@ -9,6 +9,7 @@ imports
   Model
   Types
   Modules
+  Config
   
 context-free sorts
 
