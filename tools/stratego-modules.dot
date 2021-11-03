@@ -1,0 +1,34 @@
+digraph {
+  "api/module-names-api" [color=green]
+  "api/data-names-api"
+  "lib/nabl2"
+  "nabl2/api" [color=red,fontcolor=red]
+  "lib/" [color=gray,fontcolor=gray]
+  "api/types-api" [color=gray,fontcolor=gray]
+  "static-semantics" [color=red,fontcolor=red]
+
+  "lib/nabl2" -> "nabl2/api" [color=red]
+  "lib/nabl2" -> "lib/" [color=gray]
+  "api/module-names-api" -> "api/data-names-api"
+  "api/module-names-api" -> "api/model-names-api"
+  "api/module-names-api" -> "lib/" [color=gray]
+  "api/module-names-api" -> "lib/nabl2"
+  "api/model-names-api" -> "api/module-names-api"
+  "api/model-names-api" -> "api/types-api" [color=gray]
+  "api/model-names-api" -> "api/types-names-api"
+  "api/model-names-api" -> "lib/" [color=gray]
+  "api/model-names-api" -> "analysis2/path"
+  "api/model-names-api" -> "lib/nabl2"
+  "api/data-names-api" -> "api/model-names-api"
+  "api/data-names-api" -> "api/types-names-api"
+  "api/data-names-api" -> "lib/" [color=gray]
+  "api/data-names-api" -> "nabl2/api" [color=red]
+  "api/types-names-api" -> "lib/" [color=gray]
+  "api/types-names-api" -> "static-semantics" [color=red]
+  "analysis2/path" -> "analysis2/analyse-post-analysis"
+  "analysis2/path" -> "api/expressions-names-api"
+  "analysis2/path" -> "api/model-names-api"
+  "analysis2/path" -> "lib/" [color=gray]
+  "analysis2/path" -> "lib/nabl2"
+  "api/expressions-names-api" -> "lib/nabl2"
+}
