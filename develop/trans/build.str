@@ -13,7 +13,7 @@ imports // functions
 //  api/config-api
   api/module-api
 //  lib/index
-  api/statix
+  lib/statix
 
 rules // builders
 
