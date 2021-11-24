@@ -28,7 +28,7 @@ rules
         result := None()
       else
         // phase 1: generate files
-        (targetCode, error') := <generate-java-code(error-handler)>moduleName;
+        (targetCode, error') := <generate-java-code(error-handler|)>moduleName;
         targetFileName := <java-generated-path(|relativePath)>;
         java-library-paths(|fullPath);copy-dir;
         if <eq-no-anno>(Generate(), phase) then
