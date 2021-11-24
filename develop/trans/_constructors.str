@@ -1,0 +1,62 @@
+  module _constructors
+  
+  signature
+    sorts
+      TYPE
+      MULT
+      MULTU
+      STRAT
+      RICHTYPE
+      DERIV
+      ZERONESS
+      MATERIALIZATION
+      INLINING
+      SIDE
+      PROPS
+      
+    constructors
+      INT : TYPE
+      STRING : TYPE
+      FLOAT : TYPE
+      BOOLEAN : TYPE
+      DATETIME : TYPE
+      NOVALUE : TYPE
+      ENTITY : scope -> TYPE
+      
+      ONE : MULT
+      ZERO_ONE : MULT
+      ONE_MORE : MULT
+      ZERO_MORE : MULT
+      ZERO_MORE_ORD : MULT
+      ONE_MORE_ORD : MULT
+      
+      UONE : MULTU
+      UMANY : MULTU
+      
+      ONDEMAND : STRAT
+      INCREMENTAL : STRAT
+      EVENTUAL : STRAT
+      ONDEMAND_INCREMENTAL : STRAT
+      ONDEMAND_EVENTUAL : STRAT
+      
+      RICHTYPE : TYPE * MULT * STRAT -> RICHTYPE
+      
+      PROPS : scope -> PROPS
+      
+      NORMAL : DERIV
+      ABSTRACT : DERIV
+      DERIVATION : DERIV
+      DEFAULT_VALUE : DERIV
+      
+      NON_ZERO : ZERONESS
+      POSSIBLY_ZERO : ZERONESS
+      
+      MATERIALIZED : MATERIALIZATION
+      NON_MATERIALIZED : MATERIALIZATION
+      
+      INLINE : INLINING
+      NOT_INLINE : INLINING
+      
+      LEFT : SIDE
+      RIGHT : SIDE
+      NONE : SIDE
