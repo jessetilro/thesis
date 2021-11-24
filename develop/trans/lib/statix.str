@@ -49,8 +49,14 @@ rules // store analysis to be able to query without passing the analysis
 
 rules
 
+  get-entity-type-by-name: name -> <lookup> (name, <get-entity-decls>)
+  
+  get-entity-names = get-stored-root-scope;get-scope-entity-names
   get-scope-entity-names = get-scope-entity-decls;map(entity-decl-to-name)
+  
   entity-decl-to-name: (name, _) -> name
+  
+  get-entity-decls = get-stored-root-scope;get-scope-entity-decls
   get-scope-entity-decls = stx-get-scopegraph-data(|<get-stored-analysis>, "statics/core!entity")
 
 rules // wrap nabl2 api with stored analysis

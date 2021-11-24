@@ -3,7 +3,7 @@ module generating/java/module
 imports // constructors
 
   java/Java
-  signatures/Modules-sig  
+  signatures/Modules-sig
   _constructors
 //  desugaring/constructors
 
@@ -35,8 +35,7 @@ rules
 //      logJava      := <logincremental-modulename-to-java-stm>x_moduleName;
 //      functionJava*:= <modulename-get-functionnames;fmap(functionname-to-java-classbodydecs(err))>x_moduleName
       with
-        rootScope := <get-stored-root-scope>;
-        modelJava* := <get-scope-entity-names;map(entityname-to-java-stms(err))> rootScope
+        modelJava* := <get-entity-names;map(entityname-to-java-stms(err))>
     with
       result := compilation-unit |[        
         import lib.icedust.*;
