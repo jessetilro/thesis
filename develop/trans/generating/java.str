@@ -11,6 +11,7 @@ imports
   lib/eq
   lib/files
   lib/call-external
+  lib/statix
 
 rules
 

@@ -14,6 +14,7 @@ imports // functions
   api/module-api
 //  lib/index
   lib/statix
+  statix/api
 
 rules // builders
 
@@ -23,6 +24,9 @@ rules // builders
     with
       <store-analysis-resource>$[[project-path]/[path]];
       analysis := <get-stored-analysis>
+    with
+      rootScope := <stx-get-ast-property(|analysis, "scope")>selected;
+      <store-root-scope> rootScope
     with
       filename := <guarantee-extension(|"output.txt")> path
     with
@@ -35,7 +39,7 @@ rules // builders
   build      = build(error-handler-editor)
   build-test = build(error-handler-tests)
       
-  build(error-handler|backend, moduleName, relativePath) = fail // implemented by backends
+  build(error-handler|backend, moduleName, rootScope, relativePath) = fail // implemented by backends
   
   backend-not-enabled(|backend) = !$[The backend [<write-to-string>backend] is not enabled.];debug
 

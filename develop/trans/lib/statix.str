@@ -14,6 +14,14 @@ signature constructors
 
   
 rules // store analysis to be able to query without passing the analysis
+
+  store-root-scope: scope -> None()
+    where
+      ?Scope
+    with
+      rules(StoredRootScope : None() -> scope)
+      
+  get-stored-root-scope = !None();StoredRootScope
   
   store-analysis-resource: path -> None()
     where
@@ -37,6 +45,13 @@ rules // store analysis to be able to query without passing the analysis
     !None();StoredAnalysis <+ // get stored analysis
     !t;stx--get-ast-analysis;debug(!$[Used analysis stored on term [<write-to-string>t]]) <+ // or get analysis from term
     fatal-err(|$[Error: Analysis is not stored. Please store with <store-analysis-resource>path. Also no ast-analysis available for term "[<write-to-string>t]"]))   
+
+
+rules
+
+  get-scope-entity-names = get-scope-entity-decls;map(entity-decl-to-name)
+  entity-decl-to-name: (name, _) -> name
+  get-scope-entity-decls = stx-get-scopegraph-data(|<get-stored-analysis>, "statics/core!entity")
 
 rules // wrap nabl2 api with stored analysis
 
