@@ -18,7 +18,14 @@ rules // multi-file entry points
   
   fileOk : scope * Start
   fileOk(s, m@Module(id, opt, sections)) :-
-    sectionsOk(s, sections).
+    sectionsOk(s, sections),
+    @m.scope := s.
+    
+  programOk : Start
+  programOk(m@Module(id, opt, sections)) :- { s }
+    new s,
+    sectionsOk(s, sections),
+    @m.scope := s.
   
 rules // module sections
 
