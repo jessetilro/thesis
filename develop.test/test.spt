@@ -2,6 +2,19 @@ module test
 
 language develop
 
-test parse [[
+test empty program is not valid [[
+]] parse fails
 
+test empty module is valid [[
+  module test
+]] parse succeeds
+
+test parse [[
+  module test
+  
+  model
+  
+    entity Entity {
+      number: Int = 42
+    }
 ]] parse succeeds
