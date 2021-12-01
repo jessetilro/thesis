@@ -7,10 +7,13 @@ imports // functions
   lib/debug
   lib/lists-tuples
   statix/api
+  _constructors
 
 signature constructors
 
   Namespace : String -> Namespace
+  Scope : string * string -> Scope
+  Var : string * string -> Var
 
   
 rules // store analysis to be able to query without passing the analysis
@@ -49,15 +52,31 @@ rules // store analysis to be able to query without passing the analysis
 
 rules
 
-  get-entity-type-by-name: name -> <lookup> (name, <get-entity-decls>)
+  stx-get-ast-type = stx-get-ast-type(|<get-stored-analysis>)
+
+rules
+
+  entityname-get-prop(|prop): name -> <strip-annos;lookup> (prop, <entityname-get-props> name)
+  entityname-get-props = entityname-get-type;entitytype-get-scope;scope-get-props
+  entitytype-get-scope: ENTITY(scope) -> scope
+
+  entityname-get-type: name -> <lookup> (name, <get-entitydecls>)
   
-  get-entity-names = get-stored-root-scope;get-scope-entity-names
-  get-scope-entity-names = get-scope-entity-decls;map(entity-decl-to-name)
+  get-entitynames = get-stored-root-scope;scope-get-entitynames
+  scope-get-entitynames = scope-get-entitydecls;map(entitydecl-get-name)
   
-  entity-decl-to-name: (name, _) -> name
+  entitydecl-get-name: (name, _) -> name
   
-  get-entity-decls = get-stored-root-scope;get-scope-entity-decls
-  get-scope-entity-decls = stx-get-scopegraph-data(|<get-stored-analysis>, "statics/core!entity")
+  get-entitydecls = get-stored-root-scope;scope-get-entitydecls
+  
+  scope-get-entitydecls = stx-get-scopegraph-data(|<get-stored-analysis>, "statics/core!entity")
+  scope-get-props = stx-get-scopegraph-data(|<get-stored-analysis>, "statics/core!prop");unwrap-props
+  
+  unwrap-props = map(unwrap-prop)
+  unwrap-prop: (key, propval) -> (key, <unwrap-propval> propval)
+  unwrap-propval: PROPVAL_STRING(x) -> x
+  unwrap-propval: PROPVAL_EXP(x) -> x 
+  unwrap-propval: PROPVAL_STRAT(x) -> x 
 
 rules // wrap nabl2 api with stored analysis
 

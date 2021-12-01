@@ -8,8 +8,8 @@ signature
   relations
     entity : ID -> TYPE
     entity_extension : ID * scope
-    member : ID -> RICHTYPE
-    prop : string -> string
+    member : ID -> (RICHTYPE * PROPS)
+    prop : string -> PROPVAL
     
   name-resolution
     labels 
@@ -468,11 +468,11 @@ rules // name resolution
      
   resolveMember : scope * ID -> (ID * RICHTYPE) 
       
-  resolveMember(s, id) = decl :-
+  resolveMember(s, id) = (id, richtype) :-
     query member
       filter INHERIT* EXTEND? and { x' :- x' == id }
         min and true
-        in s |-> [(_, decl)|_].
+        in s |-> [(_, (_, (richtype, _)))|_].
         
   resolveThis : scope -> TYPE
         
@@ -491,3 +491,17 @@ rules // partial classes / extension
   extendScope : (path * (string * scope)) * scope
   extendScope((_, (_, s)), s). // extension is not reflexive
   extendScope((_, (_, s')), s) :- s -EXTEND-> s'.
+  
+rules // props
+  
+  setProp: scope * string * string
+  setProp(s, key, value) :-
+    !prop[key, PROPVAL_STRING(value)] in s.
+    
+  setPropExp: scope * string * Exp
+  setPropExp(s, key, exp) :-
+    !prop[key, PROPVAL_EXP(exp)] in s.
+    
+  setPropStrat: scope * string * STRAT
+  setPropStrat(s, key, strat) :-
+    !prop[key, PROPVAL_STRAT(strat)] in s.

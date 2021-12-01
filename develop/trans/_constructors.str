@@ -13,6 +13,7 @@
       INLINING
       SIDE
       PROPS
+      PROPVAL
       
     constructors
       INT : TYPE
@@ -42,6 +43,10 @@
       RICHTYPE : TYPE * MULT * STRAT -> RICHTYPE
       
       PROPS : scope -> PROPS
+      
+      PROPVAL_STRING : string -> PROPVAL
+      PROPVAL_EXP : Exp -> PROPVAL
+      PROPVAL_STRAT : STRAT -> PROPVAL
       
       NORMAL : DERIV
       ABSTRACT : DERIV

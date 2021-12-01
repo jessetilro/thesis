@@ -21,9 +21,11 @@ rules
   
   entityname-to-java-stms(err): x_entityName -> result
     with
+      type := <entityname-get-prop(|"kind")> x_entityName;
       e1 := Lit(String([Chars(x_entityName)]));
+      e2 := Lit(String([Chars(type)]));
       result := bstm* |[
-        System.out.println("Declared entity " + e1);
+        System.out.println("Declared entity " + e1 + " of type " + e2);
       ]|
 
   modulename-to-java-compilationunit(err): x_moduleName -> result
@@ -35,7 +37,7 @@ rules
 //      logJava      := <logincremental-modulename-to-java-stm>x_moduleName;
 //      functionJava*:= <modulename-get-functionnames;fmap(functionname-to-java-classbodydecs(err))>x_moduleName
       with
-        modelJava* := <get-entity-names;map(entityname-to-java-stms(err))>
+        modelJava* := <get-entitynames;map(entityname-to-java-stms(err))>
     with
       result := compilation-unit |[        
         import lib.icedust.*;
