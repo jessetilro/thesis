@@ -1,0 +1,48 @@
+module api/types-names-api
+
+imports // signatures
+
+  analysis2/constructors
+  signatures/Types-sig
+  _constructors
+  
+imports // functions
+
+  lib/annotations
+  lib/statix
+
+rules
+
+  get-type2        = get-annotation(|Type()) <+ stx-get-ast-type;normalize-type
+  get-multiplicity = get-annotation(|Mult()) <+ stx-get-ast-type;normalize-multiplicity
+  get-strategy     =                            stx-get-ast-type;normalize-strategy
+  
+  normalize-type = ?RICHTYPE(<id>,_,_);?INT()     ;!Int()
+  normalize-type = ?RICHTYPE(<id>,_,_);?FLOAT()   ;!Float()
+  normalize-type = ?RICHTYPE(<id>,_,_);?DATETIME();!Datetime()
+  normalize-type = ?RICHTYPE(<id>,_,_);?BOOLEAN() ;!Boolean()
+  normalize-type = ?RICHTYPE(<id>,_,_);?STRING()  ;!String()
+  normalize-type = ?RICHTYPE(<id>,_,_);?NOVALUE() ;!NOVALUE()
+  normalize-type = ?RICHTYPE(<id>,_,_);?ENTITY(_)
+  normalize-type = debug(!"normalize-type: ");fail
+  
+  normalize-multiplicity = ?RICHTYPE(_,<id>,_);?ONE()              ;!One()
+  normalize-multiplicity = ?RICHTYPE(_,<id>,_);?ZERO_ONE()        ;!ZeroOrOne()
+  normalize-multiplicity = ?RICHTYPE(_,<id>,_);?ZERO_MORE()       ;!ZeroOrMore()
+  normalize-multiplicity = ?RICHTYPE(_,<id>,_);?ONE_MORE()        ;!OneOrMore()
+  normalize-multiplicity = ?RICHTYPE(_,<id>,_);?ZERO_MORE_ORD();!ZeroOrMoreOrdered()
+  normalize-multiplicity = ?RICHTYPE(_,<id>,_);?ONE_MORE() ;!OneOrMoreOrdered()
+  normalize-multiplicity = debug(!"normalize-multiplicity: ");fail
+  
+  normalize-strategy = ?RICHTYPE(_,_,<id>);?INCREMENTAL()        ;!Incremental()
+  normalize-strategy = ?RICHTYPE(_,_,<id>);?ONDEMAND()           ;!OnDemand()
+  normalize-strategy = ?RICHTYPE(_,_,<id>);?ONDEMAND_INCREMENTAL();!OnDemandIncremental()
+  normalize-strategy = ?RICHTYPE(_,_,<id>);?EVENTUAL()           ;!Eventual()
+  normalize-strategy = ?RICHTYPE(_,_,<id>);?ONDEMAND_EVENTUAL()   ;!OnDemandEventual()
+  normalize-strategy = debug(!"normalize-strategy: ");fail
+  
+  normalize-strategy-2 = ?INCREMENTAL()        ;!Incremental()
+  normalize-strategy-2 = ?ONDEMAND()           ;!OnDemand()
+  normalize-strategy-2 = ?ONDEMAND_INCREMENTAL();!OnDemandIncremental()
+  normalize-strategy-2 = ?EVENTUAL()           ;!Eventual()
+  normalize-strategy-2 = ?ONDEMAND_EVENTUAL()   ;!OnDemandEventual()
