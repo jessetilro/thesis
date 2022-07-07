@@ -63,19 +63,43 @@ rules // models
     membersOk(s_model, members).
     
   modelOk(s, Relation(e1, r1, m1_optional, m2_optional, e2, r2)) :-
-    { s_e1 s_e2 s_r1 s_r2 m1 m2 id1 s_p }
+    { s_e1 s_e2 s_r1 s_r2 m1 m2 id1 id2 s_p1 s_p2 }
     ENTITY(s_e1) == resolveEntity(s, e1) | error $[entity [e1] is not declared],
     ENTITY(s_e2) == resolveEntity(s, e2) | error $[entity [e2] is not declared],
     m1 == multOfSpaceMultList(m1_optional),
     m2 == multOfSpaceMultList(m2_optional),
     r1 == [ID2DotID(id1)],
+    r2 == [ID2DotID(id2)],
+    
     new s_r1,
     s_r1 -EXTEND-> s_e1,
     s_r1 -P-> s,
-    new s_p,
-    setProp(s_p, "derivationtype", "derivation"),
-    !member[id1, (RICHTYPE(ENTITY(s_e2), m1, INCREMENTAL()), PROPS(s_p))] in s_r1,
-    !entity_extension[e1, s_r1] in s.
+    
+    new s_r2,
+    s_r2 -EXTEND-> s_e2,
+    s_r2 -P-> s,
+    
+    new s_p1,
+    setProp(s_p1, "ns", "relation"),
+    setProp(s_p1, "inverse", id2),
+    setProp(s_p1, "side", "left"),
+    setProp(s_p1, "reltype", "none"),
+    setProp(s_p1, "derivationtype", "normal"),
+    setPropStrat(s_p1, "derivationtype", INCREMENTAL()),
+    
+    new s_p2,
+    setProp(s_p2, "ns", "relation"),
+    setProp(s_p2, "inverse", id1),
+    setProp(s_p2, "side", "right"),
+    setProp(s_p2, "reltype", "none"),
+    setProp(s_p2, "derivationtype", "normal"),
+    setPropStrat(s_p2, "derivationtype", INCREMENTAL()),
+    
+    !member[id1, (RICHTYPE(ENTITY(s_e2), m1, INCREMENTAL()), PROPS(s_p1))] in s_r1,
+    !entity_extension[e1, s_r1] in s,
+    
+    !member[id2, (RICHTYPE(ENTITY(s_e1), m2, INCREMENTAL()), PROPS(s_p2))] in s_r2,
+    !entity_extension[e2, s_r2] in s.
     
   membersOk maps memberOk(*, list(*))
   memberOk : scope * Member
@@ -118,6 +142,38 @@ rules // models
     strat(e_strat, d_strat) | error $[strategy mismatch: expected [d_strat] got [e_strat]]@exp,
     
     new s_p,
+    setProp(s_p, "ns", "attribute"),
+    setProp(s_p, "derivationtype", "derivation"),
+    setPropExp(s_p, "expr", exp),
+    setProp(s_p, "reltype", "none"),
+    setProp(s_p, "side", "none"),
+    setPropStrat(s_p, "calculationstrategy", d_strat),
+    setProp(s_p, "inlining", "not_inline"),
+    
+    !member[id, (RICHTYPE(d_type, d_mult, d_strat), PROPS(s_p))] in s,
+    
+    @id.type := RICHTYPE(d_type, d_mult, d_strat),
+    @exp.type := RICHTYPE(e_type, e_mult, e_strat).
+    
+  memberOk(s, DefaultAttribute(id, type, mult, exp, strat)) :-
+  { declared decl_richtype e_type e_mult e_strat d_type d_mult d_strat rid s_p }
+    RICHTYPE(e_type, e_mult, e_strat) == richTypeOfExp(s, exp),
+
+    d_type == typeOfPrimitiveType(type),
+    d_mult == multOfMultList(mult),
+    d_strat == stratOfStratList(strat),
+    
+    subtype(e_type, d_type) | error $[type mismatch: expected [d_type] got [e_type]]@exp,
+    mult(e_mult, d_mult) | error $[multiplicity mismatch: expected [d_mult] got [e_mult]]@exp,
+    strat(e_strat, d_strat) | error $[strategy mismatch: expected [d_strat] got [e_strat]]@exp,
+    
+    new s_p,
+    setProp(s_p, "ns", "attribute"),
+    setProp(s_p, "derivationtype", "default_value"),
+    setPropExp(s_p, "expr", exp),
+    setProp(s_p, "reltype", "none"),
+    setProp(s_p, "side", "none"),
+    setPropStrat(s_p, "calculationstrategy", d_strat),
     setProp(s_p, "inlining", "not_inline"),
     
     !member[id, (RICHTYPE(d_type, d_mult, d_strat), PROPS(s_p))] in s,
