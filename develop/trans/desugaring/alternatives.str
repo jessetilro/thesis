@@ -26,21 +26,27 @@ rules
   
   desugar-alternative: Function2(a, b, cs) -> Function(b, [a|cs])
   
-  desugar-alternative: e@IfElseNoValue(a, b) -> If(a, b, <custom-origin(|e)>NoValue())
+  desugar-alternative: e@IfElseNoValue(a, b) -> If(a, b, <custom-origin(|e)>Literal(NoValue()))
 
 rules
   
-  desugar-alternative: InterpolateString(e1, e2, e3) ->
-    Addition(
-      e1,
+  desugar-alternative: Literal(String(x@InterpolateString(_, _, _))) ->
+    <interpolatestring-to-expression> x
+  desugar-alternative: x@InterpolateString(_, _, _) ->
+    <interpolatestring-to-expression> x
+    
+  interpolatestring-to-expression: InterpolateString(e1, e2, e3) ->
+  	Addition(
+      <try(litstring-to-expression)>e1,
       <custom-origin(|e2)>Function("concat",[
         <custom-origin(|e2)>Merge(
           <custom-origin(|e2)>Cast(
             e2,
             <custom-origin(|e2)>String()
           ),
-          e3
+          <try(litstring-to-expression)>e3
         )]
       )
     )
+  litstring-to-expression: x@LitString(_) -> Literal(String(x))
   
