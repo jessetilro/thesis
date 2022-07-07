@@ -1,0 +1,7 @@
+module interpolatestring
+
+model
+
+  entity Entity {
+  	attribute : String = "first ${"interpolate"} middle ${"interpolate"} last"
+  }
