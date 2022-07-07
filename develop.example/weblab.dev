@@ -1,0 +1,548 @@
+module weblabmodel (eventual)
+
+//config
+//
+//  backend: WebDSL
+//    ui: None
+//    embedded: yes
+//    dont generate Assignment.title               field // (name, searchable)
+//    dont generate AdditionalGradeDef.description field // (name)
+//    dont generate SubmissionGrade.traceFinalized field // : WikiText
+//    dont generate AssignmentCollectionSubmission.submissions2 expression, incoming paths // specified as HQL query, and dirty flagged manually
+//    eventual threads:  4
+//    eventual interval: 5 ms
+//    eventual batch size: 1
+//    log eventual update: no
+//    log eventual status: yes
+//    log incremental: no
+
+model
+
+  entity Assignment {
+    title         : String?
+    titleComp     : String    = this.filter(:BasicAssignment).question.titleComp <+
+                                if(title!=""<+false) title <+
+                                "Assignment" (inline)
+    hasCheckList  : Boolean
+    weight        : Float
+    published     : Boolean
+    forGrade      : Boolean   = published && weight > 0.0 (inline)
+    deadline      : Datetime?
+    deadlineComp  : Datetime? = deadline <+ parent.deadlineComp (incremental)
+    extension     : Datetime?
+    extensionComp : Datetime? =
+      if(hasD(deadline)) extension
+      else               extension <+ parent.extensionComp
+    penalty       : Float
+    
+    subsInEval    : AssignmentSubmission* = submissions2.filter(x => x.forStatistics)        (inline)
+    meanGrade2    : Float? = avg(subsInEval.grade2)
+    numEnrolled   : Int    = count(subsInEval)
+    numAttempted  : Int    = countTrue(subsInEval.attemptedComp)
+    numCompleted  : Int    = countTrue(subsInEval.completedComp)
+    passed2       : Int    = countTrue(subsInEval.pass2)
+    attemptedPerc : Int    = numAttempted * 100 /. (parent.numAttempted <+ numEnrolled) <+ 0 (on-demand eventual)
+    completedPerc : Int    = numCompleted * 100 /. numAttempted <+ 0                         (on-demand eventual)
+    passPercentage: Int    = passed2 * 100 /. numAttempted <+ 0                              (on-demand eventual)
+    
+    hasAllGradesFinalized     : Boolean = conj(subsInEval.hasAllGradesFinalized)               (eventual) //was inline
+    hasSomeGradesFinalized    : Boolean = disj(subsInEval.hasSomeGradesFinalized)              (eventual) //was inline
+    someFinalizedInconsistent : Boolean = disj(subsInEval.someFinalizedInconsistent)           (eventual) //was on-demand eventual if any finalized grade would be different if recalculated, notify course manager
+    isPartiallyFinalized      : Boolean = hasSomeGradesFinalized and not hasAllGradesFinalized (on-demand eventual) // if a course is only partially finalized, notify course manager
+  }
+  
+  entity AssignmentCollection extends Assignment {
+    assignmentsForGrade : Assignment* = assignments.filter(x => x.forGrade) (inline)
+    passNSubAssignments : Int? =
+      if(gradingScheme.passNSubAssignments > -1 <+ false)
+        (gradingScheme.passNSubAssignments <+ 0)                            (inline)
+    
+    totalWeight : Float = sum(assignmentsForGrade.weight)                   (inline)
+  }
+  
+  relation Assignment.parent ? <-> * (ordered) AssignmentCollection.assignments
+  
+  entity BasicAssignment extends Assignment {
+  
+  }
+
+  entity AssignmentSubmission {
+    pass              : Boolean // input only for PassFailQuestion
+    attempted         : Boolean
+    attemptedComp     : Boolean   = attempted
+    completed         : Boolean
+    completedComp     : Boolean   = completed
+    lastSavedAt       : Datetime?
+    submittedAt       : Datetime?
+    savedAt2          : Datetime? = lastSavedAt <+ submittedAt                                               (eventual) //was inline, but needs override which isnt allowed for inline
+    extension         : Datetime?
+    deadlineNoInherit : Datetime? = extension <+ assignment.deadline                                         (inline)
+    deadlineComp      : Datetime? = if(hasD(assignment.deadlineComp)) (deadlineNoInherit <+ parent2.deadlineComp)
+    
+    hasNotAllDates: Boolean   = not(hasD(savedAt2) and hasD(deadlineComp) and hasD(assignment.extensionComp))(inline)
+    beforeDeadline: Boolean   = savedAt2 <= deadlineComp <+ not hasD(deadlineComp)                           (inline)
+    afterExtension: Boolean   = savedAt2 > assignment.extension <+ false                                     (inline)
+    extBeforeDeadl: Boolean   = assignment.extension < deadlineComp <+ false                                 (inline)
+    useExtension  : Boolean   = not hasNotAllDates and not beforeDeadline and not afterExtension and not extBeforeDeadl (inline)
+    
+    onTime        : Boolean   = beforeDeadline or useExtension                                               (inline)
+    neverSaved    : Boolean   = not hasD(savedAt2)                                                           (inline)
+    usedExt       : Int?      = savedAt2 - deadlineComp                                                      (inline)
+    maxExt        : Int?      = assignment.extension - deadlineComp                                          (inline)
+    extRatio      : Float     = usedExt / maxExt <+ 1.0                                                      (inline)
+    penalty       : Float =
+      switch {
+        case hasNotAllDates => 0.0
+        case beforeDeadline => 0.0
+        case afterExtension => 10.0
+        case extBeforeDeadl => 10.0
+        default             => (assignment.penalty<+0.0) * extRatio
+      } (inline)
+  
+    forGrade      : Boolean = assignment.forGrade <+ false                                                      (inline)
+    weight2       : Float   = max(0.0000000001 ++ assignment.weight)                                            (inline)
+    grade2        : Float?  = if(gradeData.gradeOverridden <+ false) gradeData.gradeOverride else gradeData.grade2
+    gradeWeighted : Float?  = grade2 * weight2                                                                  (inline)
+    minimumToPass : Float   = assignment.gradingScheme.minimumToPass <+ 0.0                                     (inline)
+    
+    weightShare   : Float   = weight2 / parent2.totalWeight <+ 0.0                                              (inline)
+    gradePassOrder: Float   = (if(pass2) grade2 else (grade2-6.0) * weightShare - 100000.0 <+ -100000.0) * -1.0 (inline)
+  
+    progress2     : Float   = if(pass2) 1.0 else 0.0
+    progressWeighted:Float  = progress2 * weight2                                                               (inline)
+    progressPercent2:Float  = round1(progress2 * 100.0)                                                         (inline)
+  
+    pass2         : Boolean (abstract)
+    computeGrade2 : Float?  (abstract)
+      
+    forStatistics: Boolean =
+      count(student)>0 and student.enrolled and student.forGrade and
+      (attemptedComp or gradeData.gradeOverridden)
+      <+ false                                                                                                  (inline)
+      
+    isPassFail    : Boolean = assignment.filter(:BasicAssignment).question.filter(:PassFailQuestion).count()==1 (inline)
+    
+    traceCalculated:String (abstract)                                                                           (on-demand eventual)
+    explainPass   : String = explainPass(this)                                                                  (inline)
+    
+    hasGradeFinalized          : Boolean = hasF(gradeData.gradeFinalized)                                       (inline)
+    gradeFinalizedInconsistent : Boolean = gradeData.gradeCalculated != gradeData.gradeFinalized <+ false       (inline)
+    isPartiallyFinalized       : Boolean = hasSomeGradesFinalized and not hasAllGradesFinalized                 (on-demand eventual)
+    hasAllGradesFinalized      : Boolean = hasGradeFinalized          // overridden in collections: all grades in subtree finalized
+    hasSomeGradesFinalized     : Boolean = hasGradeFinalized          // overridden in collections: some grades in subtree finalized
+    someFinalizedInconsistent  : Boolean = gradeFinalizedInconsistent // overridden in collections: some finalized grade in subtree inconsistent
+  }
+  
+  relation Assignment.submissions2 * <-> ? AssignmentSubmission.assignment
+  
+  entity AssignmentCollectionSubmission extends AssignmentSubmission {
+    assignment2   : AssignmentCollection? = assignment.filter(:AssignmentCollection)                            (inline)
+    subsForGrade  : AssignmentSubmission* = submissions2.filter(x => x.forGrade)                                (inline)
+    subsForGradeN : AssignmentSubmission* =
+      subsForGrade.orderBy(x => x.gradePassOrder).first(assignment2.passNSubAssignments <+ 0)                   (inline)
+    subAssignNsubs: Assignment* = subsForGradeN.assignment                                                      (inline)
+    subAssignNrest: Assignment* = 
+      (assignment2.assignments \ subAssignNsubs)
+      .orderBy(x => x.weight)
+      .first((assignment2.passNSubAssignments <+ 0) - count(subsForGradeN))                                     (inline)
+    subAssignN    : Assignment* = subAssignNsubs ++ subAssignNrest                                              (inline)
+
+    attemptedComp : Boolean = disj(subsForGrade.attemptedComp)
+    completedComp : Boolean = 
+      if(isPassN)
+        subsForGrade.completedComp.countTrue() >= assignment2.passNSubAssignments <+ false
+      else
+        subsForGrade.completedComp.countTrue() == assignment2.assignmentsForGrade.count()
+
+    totalGrade    : Float   = sum(subsForGrade.gradeWeighted)                                                   (inline)
+    totalWeight   : Float   = assignment2.totalWeight <+ 0.0                                                    (inline)
+    totalGradeN   : Float   = sum(subsForGradeN.gradeWeighted)                                                  (inline)
+    totalWeightN  : Float   = sum(subAssignN.weight)                                                            (inline)
+    isPassN       : Boolean = hasI(assignment2.passNSubAssignments)                                             (inline)
+    completedSubs : AssignmentSubmission* =
+      if(isPassN)
+        subsForGradeN.filter(x => x.completedComp)
+      else
+        subsForGrade.filter(x => x.completedComp)                                                               (inline)
+        
+    totalWeightToComplete : Float = if(isPassN) totalWeightN else totalWeight                                   (inline)
+    completedWeight       : Float = sum(completedSubs.assignment.weight)                                        (inline)
+    
+    computeGrade2 : Float?  =
+      if(isPassN)
+        (totalGradeN / totalWeightN)
+      else
+        (totalGrade / totalWeight)
+      //TODO: group submissions + personal grade overrides in groups
+    subsForSavedAt: AssignmentSubmission* = submissions2.filter( x => x.assignment.published <+ false )                  (inline)
+    savedAt2      : Datetime? = max( subsForSavedAt.savedAt2 )                                                           (eventual)
+    subsPassedMaterialized    : Int = countTrue(subsForGrade.pass2)                                                      (inline)
+    subsPassedNonMaterialized : Int =
+      (assignment2.assignmentsForGrade \ subsForGrade.assignment)
+      .filter(x=>x.gradingScheme.minimumToPass <= x.gradingScheme.baseGradeNotOnTime).count()                            (inline)
+    subsPassed    : Int = subsPassedMaterialized + subsPassedNonMaterialized                                             (inline)
+    passSub2      : Boolean = 
+      (if(isPassN)
+        subsPassed >= (assignment2.passNSubAssignments<+0)
+      else
+        subsPassed >= (assignment2.assignmentsForGrade.count()<+0)
+      )                                                                                                                  (inline)
+    pass2         : Boolean = (grade2 >= assignment.gradingScheme.minimumToPass <+ false) and
+                              (passSub2 or (gradeData.gradeOverridden <+ false))
+
+    progress2     : Float   =
+      if(pass2)
+        1.0
+      else
+        if(!isPassN)
+          sum(subsForGrade.progressWeighted) / totalWeight
+        else
+          sum(subsForGradeN.progressWeighted) / totalWeightN <+ 0.0
+
+    traceCalculated : String  = gradeTraceCollectionSubmission(this)  (on-demand eventual)
+    
+    hasAllGradesFinalized      : Boolean = conj(subsForGrade.hasAllGradesFinalized) and hasGradeFinalized 
+    hasSomeGradesFinalized     : Boolean = disj(subsForGrade.hasSomeGradesFinalized) or hasGradeFinalized
+    someFinalizedInconsistent  : Boolean = disj(subsForGrade.someFinalizedInconsistent) or gradeFinalizedInconsistent
+  }
+  
+  entity BasicAssignmentSubmission extends AssignmentSubmission {
+    pass2         : Boolean = if(isPassFail) pass else grade2 >= minimumToPass <+ false
+    computeGrade2 : Float?  = if(isPassFail) if(pass) 10.0 else gradeData.scheme.baseGradeWhenOnTime
+    traceCalculated:String  = if(isPassFail) gradeTracePassFail(this) else "" (on-demand eventual)
+  }
+  
+  entity ProgrammingAnswer extends BasicAssignmentSubmission {
+    computeGrade2 : Float? = specTestRun.correctTests2 / specTestRun.numberOfTests * 10.0
+    traceCalculated:String = gradeTraceProgrammingAnswer(this) (on-demand eventual)
+  }
+  
+  entity ProgramRun {
+    numberOfTests : Int?
+    failedTests   : Int?
+    correctTests2 : Int? = numberOfTests - failedTests (inline)
+  }
+  
+  relation ProgrammingAnswer.currentRun  ? <-> ? ProgramRun.answerCurrentRun
+  relation ProgrammingAnswer.userTestRun ? <-> ? ProgramRun.answerUserTestRun
+  relation ProgrammingAnswer.specTestRun ? <-> ? ProgramRun.answerSpecTestRun
+  
+  entity StudentInCourse {
+    enrolled : Boolean
+    forGrade : Boolean
+  }
+  
+  relation AssignmentSubmission.student ? <-> * StudentInCourse.submissions
+  
+  relation AssignmentCollectionSubmission.submissions2 = 
+    student.submissions.filter(s => s.assignment.in(assignment.filter(:AssignmentCollection).assignments) <+ false)
+    <-> ? AssignmentSubmission.parent2
+
+  entity SubmissionGrade {
+    graded          : Boolean
+//    grade           : Float? //is cache of calculateGrade()
+    gradeOverride   : Float?
+    gradeOverridden : Boolean
+    
+    gradeFinalized  : Float?
+    traceFinalized  : String?
+    
+    scheme : GradingScheme? = sub.assignment.gradingScheme (inline)
+    
+    isProgramming        : Boolean = sub.filter(:ProgrammingAnswer).count()==1                                                   (inline)
+    isCollection         : Boolean = sub.filter(:AssignmentCollectionSubmission).count()==1                                      (inline)
+    isMultipleChoice     : Boolean = sub.assignment.filter(:BasicAssignment).question.filter(:MultipleChoiceQuestion).count()==1 (inline)
+    isPassFail           : Boolean = sub.assignment.filter(:BasicAssignment).question.filter(:PassFailQuestion).count()==1       (inline)
+    hasComputedGradePart : Boolean = isProgramming or isCollection or isMultipleChoice  or isPassFail                            (inline)
+    
+    hasCheckListGradePart : Boolean =
+      (sub.assignment.hasCheckList <+ false) and
+      sub.filter(:AssignmentCollectionSubmission).count() == 0          (inline)
+    
+    hasAdditionalGrades : Boolean = scheme.additionalGrades.count() > 0 (inline)
+    
+    hasBonus : Boolean = disj(scheme.additionalGrades.isBonus)          (inline)
+    
+    checkGrade : Float? = sub.checkListValuation.ratio2 * 10.0          (inline)
+            
+    totalGrade : Float = sum(
+      (if(hasComputedGradePart)             sub.computeGrade2 * scheme.computedWeight  ) ++
+      (if(hasCheckListGradePart and graded) checkGrade        * scheme.checkListWeight ) ++
+      (if(hasAdditionalGrades and graded)   additionalGrades.gradeWeighted             )
+    ) (inline)
+    
+    totalWeight : Float = sum(
+      (if(hasComputedGradePart)  scheme.computedWeight               ) ++
+      (if(hasCheckListGradePart) scheme.checkListWeight              ) ++
+      (if(hasAdditionalGrades)   scheme.additionalGrades.totalWeight )
+    ) (inline)
+    
+    hasCustomTotalWeight : Boolean =
+      scheme.customTotalWeight > 0.0 <+ false (inline)
+    
+    totalWeightCustom : Float =
+      if(hasCustomTotalWeight) scheme.customTotalWeight
+      <+
+      totalWeight (inline)
+    
+    newGrade        : Float = if(totalWeightCustom > 0.0) totalGrade / totalWeightCustom <+ 0.0 else totalGrade (inline)
+    newGradeRounded : Float = max(newGrade - (sub.penalty <+ 0.0) ++ (scheme.baseGradeWhenOnTime <+ 1.0) ).round1()          (inline)
+
+    newGradeOnTime  : Float = if(sub.onTime <+ false) newGradeRounded else (scheme.baseGradeNotOnTime <+ 0.0).round1()  (inline)
+    
+    maxNotPassed    : Float = max(0.0 ++ sub.minimumToPass-0.5).round1()                                        (inline)    
+    passSub2        : Boolean = sub.filter(:AssignmentCollectionSubmission).passSub2 <+ true                    (inline)
+
+    gradeMaxNotPass : Float = if(passSub2) newGradeOnTime else min(newGradeOnTime ++ maxNotPassed)              (inline)
+                        
+    gradeMax        : Float = if(hasF(scheme.maxGrade)) min(gradeMaxNotPass ++ scheme.maxGrade) else gradeMaxNotPass (inline)
+    
+    gradeCalculated : Float = gradeMax
+
+    grade2          : Float? = gradeFinalized <+ gradeCalculated                                                (inline)
+    
+    traceCalculated : String = gradeTraceSubmissionGrade(this)                                                  (on-demand eventual)
+    gradeTrace2     : String = traceFinalized <+ traceCalculated                                                (on-demand eventual)
+  }
+  
+  relation AssignmentSubmission.gradeData ? <-> ? SubmissionGrade.sub
+  
+  relation SubmissionGrade.newerGrade ? <-> ? SubmissionGrade.previousGrade
+
+  entity GradingScheme {
+    minimumToPass       : Float
+    passNSubAssignments : Int?
+    computedWeight      : Float
+    customTotalWeight   : Float
+    checkListWeight     : Float
+    maxGrade            : Float?
+    baseGrade           : Float?
+    baseGrade2          : Float =  baseGrade <+ -1.0 (inline) 
+    baseGradeWhenOnTime : Float = if( baseGrade2 < 0.0) 1.0 else baseGrade2 (inline)
+    baseGradeNotOnTime  : Float = if( baseGrade2 < 0.0) 0.0 else baseGrade2 (inline)
+  }
+  
+  relation GradingScheme.assignment 1 <-> 1 Assignment.gradingScheme
+  
+  // used in IN4303 2016-2017
+  entity AdditionalGradeDef {
+    description     : String
+    descriptionComp : String  = if(description!=""<+false) description <+ "Additional Grade" (inline)
+    weight          : Float
+    isBonus         : Boolean
+    totalWeight     : Float   = if(isBonus) 0.0 else weight (inline)
+  }
+  
+  relation GradingScheme.additionalGrades * <-> ? AdditionalGradeDef.gradingScheme //NOTE: needs migration (was on * side with no inverse)
+  
+  entity AdditionalGrade {
+    grade         : Float
+    gradeWeighted : Float  = grade * def.weight              (inline)
+  }
+  
+  relation AdditionalGrade.def 1 <-> * AdditionalGradeDef.additionalGrades
+  
+  relation SubmissionGrade.additionalGrades * <-> 1 AdditionalGrade.submissionGrade //NOTE: needs migration (was on * side with no inverse)
+  
+  // used in TI2606 2016-2017 lab type soundness
+  entity CheckList {
+    total        : Float = sum(items.weight)                           (inline)
+    totalRounded : Float = round1(total)                               (inline)
+  }
+  
+  relation CheckList.assignment 1 <-> ? Assignment.checkList
+  
+  entity CheckListItem {
+    weight : Float
+  }
+  
+  relation CheckList.items * (ordered) <-> 1 CheckListItem.checkList //NOTE: needs migration (was on * (ordered) side with no inverse)
+  
+  entity CheckListValuation {
+    value2        : Float = sum(items2.weight2)                           (inline)
+    value2rounded : Float = round1(value2)                                (inline)
+    ratio2        : Float = value2rounded / checkList.totalRounded <+ 0.0 (incremental)
+  }
+  
+  relation AssignmentSubmission.checkListValuation ? <-> ? CheckListValuation.submission2
+  
+  relation CheckListValuation.checkList 1 <-> * CheckList.checkListValuations
+  
+  entity CheckListItemValuation {
+    holds  : Boolean
+    weight2 : Float = if(holds) (item.weight <+ 1.0) else 0.0 (inline)
+  }
+  
+  relation CheckListItemValuation.item ? <-> * CheckListItem.valuations
+  
+  relation CheckListItemValuation.valuation 1 <-> * CheckListValuation.items2
+  
+  entity Question {
+    title     : String?
+    titleComp : String  = if(title!=""<+false) title <+ "Question" (inline)
+  }
+  
+  relation Question.assignment 1 <-> 1 BasicAssignment.question
+  
+  // used in TI2606 2016-2017 exam
+  entity MultipleChoiceQuestion extends Question {
+    select     : Int // 0: select all that apply, 1: select exactly one answer, 2: select exactly two answers, ...
+    selectN    : Boolean = select > 0 <+ false (inline)
+    nOfCorrect : Int     = countTrue(alternatives.correct) (inline)
+  }
+  
+  entity Alternative {
+    correct    : Boolean
+  }
+  
+  relation MultipleChoiceQuestion.alternatives * (ordered) <-> 1 Alternative.question  //NOTE: needs migration (was on * (ordered) side with no inverse)
+  
+  entity MultipleChoiceAnswer extends BasicAssignmentSubmission {
+    nOfCorrect   : Int     = countTrue(choices.correct)          (inline)
+    onlyCorrect  : Boolean = conj(choices.correct)               (inline)
+    correct      : Boolean =
+      if(question.selectN)
+        onlyCorrect and nOfCorrect >= question.select
+      else
+        onlyCorrect and nOfCorrect == question.nOfCorrect
+      (inline)
+    computeGrade2 : Float? = if(correct) 10.0 else 0.0
+    traceCalculated:String = gradeTraceMultipleChoice(this)      (on-demand eventual)
+  }
+  
+  relation MultipleChoiceAnswer.question 1 <-> * MultipleChoiceQuestion.answers
+  
+  relation MultipleChoiceAnswer.choices * <-> * Alternative.answers  //NOTE: needs migration (was on choices with no inverse)
+
+  // used in TI1306 2017-2018
+  entity PassFailQuestion extends Question {
+  
+  }
+
+functions
+  
+  round1(f : Float) : Float = (f * 10.0 + 0.5) as Int as Float / 10.0
+  
+  countTrue(bs : Boolean*) : Int = bs.filter(b=>b).count()
+  
+  hasD(d : Datetime*) : Boolean = count(d)>0
+  hasI(d : Int*     ) : Boolean = count(d)>0
+  hasF(d : Float*   ) : Boolean = count(d)>0
+
+functions // grade trace for specific submission types
+  
+  gradeTracePassFail(s : BasicAssignmentSubmission) : String =
+    "Pass or Fail assignment, result: ${if(s.pass) "**PASS**" else "**FAIL**"}"
+  
+  gradeTraceProgrammingAnswer(p : ProgrammingAnswer) : String =
+    "\n\nNumber of passed/total specification tests: ${p.specTestRun.correctTests2}/${p.specTestRun.numberOfTests}, " +
+    "grade: __`${p.computeGrade2}`__" 
+  
+  gradeTraceMultipleChoice(m : MultipleChoiceAnswer) : String =
+    if(m.correct)
+      "Multiple Choice answer was correct, grade: __`10.0`__"
+    else
+      "Multiple Choice answer was incorrect, grade: __`0.0`__"
+  
+  gradeTraceCollectionSubmission(s : AssignmentCollectionSubmission) : String =
+    if(!s.isPassN)
+      "\n\n**Computation of Assignment Collection Grade**\n\n${s.subsForGrade.gradeTraceLine()}"
+    else
+      "\n\n**Computation of Assignment Collection Grade**\n\n" + 
+      "At least `${s.assignment2.passNSubAssignments} subassignment(s)` should pass to pass this assignment.\n\n" +
+      "Basing grade on:\n\n${s.subsForGradeN.gradeTraceLine()}" +
+      "\n\nNot basing grade on:\n\n${(s.submissions2\s.subsForGradeN).gradeTraceLine()}"
+
+  gradeTraceLine(s : AssignmentSubmission) : String = 
+    if(s.isPassFail)
+      "\n- ${s.assignment.titleComp} - __${if(s.pass2) "PASS" else "FAIL"}__ (Pass/Fail question)"
+    else
+      "\n- ${s.assignment.titleComp} - `${s.grade2}` weight: ${s.assignment.weight
+      } - __${if(s.pass2) "PASS" else "FAIL"}__ (minimum: ${s.minimumToPass})"
+    
+functions // grade trace for all submission types
+  
+  gradeTraceSubmissionGrade(g : SubmissionGrade) : String =
+    "${g.sub.savedAtTrace()
+    }\n\n${
+    (if(g.sub.onTime <+ false)
+      "__Submission was on time__\n\n${g.sub.traceCalculated}${
+      if(g.hasComputedGradePart)
+        "\n\nComputed grade part, __grade:__ `${g.sub.computeGrade2}` __weight:__ ${g.scheme.computedWeight}"
+      }${
+      if(g.hasCheckListGradePart)
+        "\n\nAssignment has a checklist, __grade:__ `${g.checkGrade}` __weight:__ ${g.scheme.checkListWeight}"
+      }${
+      if(g.hasAdditionalGrades) //TODO: add AdditionalGradeDef.description
+        "\n\nAssignment has ${count(g.scheme.additionalGrades)} additional grades:\n\n${g.additionalGrades.gradeTraceAdditionalGrade()}" 
+      }\n\nTotal of all `grade * weight`-products: ${g.totalGrade}${
+      if(g.hasCustomTotalWeight)
+        "\n\nTotal weight for grade calculation is manually set to: ${g.scheme.customTotalWeight}"
+      else
+        "\n\nTotal weight of assignment: ${g.totalWeight}"
+      }${
+      if(g.sub.penalty != 0.0 <+ false)
+        "${g.sub.penaltyTrace()
+        }\n\nCalculated grade (total grade / total weight) - penalty: `${g.newGradeRounded}`"
+      else
+        "\n\nCalculated grade (total grade / total weight): `${g.newGradeRounded}`"
+      }"
+    else
+      if(g.sub.neverSaved <+ false)
+        "\n\nSubmission was never saved"
+      else
+        "\n\nSubmission was not saved (${g.sub.savedAt2}) on time."
+    )
+    }\n\nCalculated grade for this submission: __`${g.newGradeOnTime}`__${
+    if(!g.passSub2)
+      "\n\nHowever, at least one of the sub-assignments failed, therefore this submission also failed. " +
+      "The minimum of this assignment to pass is set to: `${g.sub.minimumToPass}`, taking `${g.maxNotPassed}` as maximum fail grade" +
+      "\n\nThe grade will be set to min(`${g.newGradeOnTime}`, `${g.maxNotPassed}`) = `${g.grade2}`"
+    }${
+    if(g.gradeOverridden)
+      "\n\nGrade is overridden and set to: __`${g.gradeOverride}`__"
+    }"
+  
+  savedAtTrace(s : AssignmentSubmission) : String =
+    switch {
+      case not hasD(s.savedAt2) and hasD(s.deadlineComp)          => "Submission was not saved, deadline was: ${s.deadlineComp}"
+      case not hasD(s.savedAt2)                                   => "Submission was not saved"
+      case s.onTime and hasD(s.deadlineComp) and s.beforeDeadline => "Submission was saved ( *${s.savedAt2}* ) before deadline ( *${s.deadlineComp}* )"
+      case s.onTime and hasD(s.deadlineComp) and s.useExtension   => "Submission was saved ( *${s.savedAt2}* ) after deadline ( *${s.deadlineComp}* ), but before extension ( *${s.assignment.extensionComp}* )"
+      case s.onTime                                      => "Submission was saved ( *${s.savedAt2}* )"
+      case not hasD(s.assignment.extensionComp)          => "Submission was saved ( *${s.savedAt2}* ) after the deadline ( *${s.deadlineComp}*)"
+      case s.afterExtension                              => "Submission was saved ( *${s.savedAt2}* ) after the deadline extension ( *${s.assignment.extensionComp}* )"
+      default                                            => "Submission was saved ( *${s.savedAt2}* ) after the deadline ( *${s.deadlineComp}*), but before extension ( *${s.assignment.extensionComp}* )"
+    }
+  
+  penaltyTrace(s : AssignmentSubmission) : String =
+    switch {
+      case s.hasNotAllDates => ""
+      case s.beforeDeadline => "" 
+      case s.afterExtension =>
+        "\n\nSubmission as saved ( _${s.savedAt2}_ ) after the deadline extension ( _${
+        s.assignment.extension}_ ), __penalty: `-10.0`__"
+      case s.extBeforeDeadl =>
+        "\n\nYour extension date ( _${s.assignment.extension}_ ) was before the deadline ( _${
+        s.deadlineComp}_ ), __penalty: `-10.0`__"
+      default             =>
+        "\n\nYou saved your submission ( _${s.savedAt2}_ ) during the extension ( _${
+        s.deadlineComp} to ${s.assignment.extension}_ ), __penalty: (used-extension-ratio) * `-${
+        s.assignment.penalty}`= `-${s.penalty}`__"
+    }
+
+  gradeTraceAdditionalGrade(a : AdditionalGrade) : String =
+    "\n- ${a.def.descriptionComp} - __grade:__ ${a.grade} __weight:__ ${a.def.weight} ${if(a.def.isBonus) "(bonus weight)"}"
+
+functions // explain pass
+  
+  explainPass(s: AssignmentSubmission) : String =
+    "${s.filter(:AssignmentCollectionSubmission).explainPassCol()} Minimum grade to pass: ${s.minimumToPass}"
+  
+  explainPassCol(s : AssignmentCollectionSubmission) : String =
+    "${s.subsPassed} out of ${count(s.assignment2.assignmentsForGrade)} weighted sub-assignments passed. "
+
+functions
+
+  in(a:Assignment, assigns:Assignment*) : Boolean = 
+    assigns.filter(x => x == a).count() > 0
