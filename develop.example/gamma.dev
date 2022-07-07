@@ -4,4 +4,10 @@ model
 
   entity Entity {
     attr : Int = 42
+    x : Int = attr * 2 (inline)
+    y : Int = 0 + attr (default)
+  }
+  
+  entity Test {
+    y : Boolean = true
   }

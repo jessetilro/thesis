@@ -24,7 +24,7 @@ model
   
   entity Beta {
     number : Int = 1
-    test : Int
+    test : Int = alpha.add
   }
   
   relation Alpha.beta <-> Beta.alpha
