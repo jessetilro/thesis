@@ -2,12 +2,15 @@ module gamma
 
 model
 
-  entity Entity {
-    attr : Int = 42
-    x : Int = attr * 2 (inline)
-    y : Int = 0 + attr (default)
+  entity Summary {
+    total : Int = sum(counting_numbers.value)
+    average : Int = avg(counting_numbers.value) <+ 0
   }
   
-  entity Test {
-    y : Boolean = true
+  entity Number {
+    value : Int = 0 (default)
+    counting : Boolean = true (default)
   }
+  
+  relation Summary.numbers * <-> 1 Number.summary
+  relation Summary.counting_numbers * = numbers <-> ? Number.summary_as_counting
