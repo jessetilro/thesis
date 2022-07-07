@@ -5,6 +5,7 @@ model
   entity Summary {
     total : Int = sum(counting_numbers.value)
     average : Int = avg(counting_numbers.value) <+ 0
+    maximum : Int = max(counting_numbers.value) <+ 0
   }
   
   entity Number {
@@ -14,3 +15,4 @@ model
   
   relation Summary.numbers * <-> 1 Number.summary
   relation Summary.counting_numbers * = numbers.filter(x => x.counting).orderBy(x => x.value) <-> ? Number.summary_as_counting
+  relation Summary.maximum_number ? = counting_numbers.find(x => x.value == x.summary.maximum) <-> ? Number.summary_as_maximum
