@@ -47,6 +47,8 @@ rules // multiplicity/ordering lattice
   multOfMult(ZeroOrMore()) = ZERO_MORE().
   
   multOfSpaceMultList : list(SpaceMultiplicity) -> MULT
+  
+  multOfSpaceMultList([x]) = multOfSpaceMultiplicity(x).
   multOfSpaceMultList([]) = ONE().
   
   multOfSpaceMultiplicity : SpaceMultiplicity -> MULT
