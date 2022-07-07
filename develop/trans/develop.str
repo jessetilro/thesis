@@ -7,6 +7,7 @@ imports
   outline
   analysis
   build
+  desugaring/desugar
 
 rules // Debugging
   
@@ -15,3 +16,9 @@ rules // Debugging
     with
       filename := <guarantee-extension(|"aterm")> path
     ; result   := node
+    
+  debug-show-desugared-aterm:
+    (node, _, _, path, project-path) -> (filename, result)
+    with
+      filename := <guarantee-extension(|"aterm")> path
+    ; result   := <desugar-before-analysis>node
