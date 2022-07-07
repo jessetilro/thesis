@@ -3,6 +3,7 @@ module lib/origin
 imports // functions
 
   api/_runtime
+  lib/debug
 
 rules // rewrite terms to have an origin
   
@@ -21,9 +22,9 @@ rules // rewrite terms to have an origin
   
 rules // check AST whether every sub term has an origin
   
-//  warning-on-missing-origin: term -> <id>
-//    with
-//      terms-missing-origin;filter(not(?[]));map(debug(|"Warning: Term missing origin"))
+  warning-on-missing-origin: term -> <id>
+    with
+      terms-missing-origin;filter(not(?[]));map(debug(|"Warning: Term missing origin"))
   
   terms-missing-origin = collect-all(not(origin-offset))
   

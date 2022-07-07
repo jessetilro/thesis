@@ -9,6 +9,8 @@ imports
   injections/-
 
   libspoofax/term/origin
+  
+  desugaring/desugar
 
 rules // Analysis
 
@@ -19,7 +21,7 @@ rules // Analysis
   // multi-file analysis
 //  editor-analyze = stx-editor-analyze(pre-analyze, post-analyze|"statics", "projectOk", "fileOk")
 
-  pre-analyze  = origin-track-forced(explicate-injections-develop-Start)
+  pre-analyze  = origin-track-forced(explicate-injections-develop-Start); desugar-before-analysis
   post-analyze = origin-track-forced(implicate-injections-develop-Start)
 
 rules // Editor Services
