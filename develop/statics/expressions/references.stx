@@ -12,6 +12,8 @@ rules
     @r.type := RICHTYPE(d_type, d_mult, d_strat),
     @r.ref := id. // todo check materialization
     
-  richTypeOfExp(s, MemberAccess(e, r)) = RICHTYPE(d_type, d_mult, d_strat) :- {s_entity e_mult e_strat}
+  richTypeOfExp(s, MemberAccess(e, r)) = RICHTYPE(d_type, out_mult, out_strat) :- {s_entity e_mult e_strat d_mult d_strat}
     richTypeOfExp(s, e) == RICHTYPE(ENTITY(s_entity), e_mult, e_strat) | error $[expression should yield an entity type]@e,
-    resolveMember(s_entity, r) == (_, RICHTYPE(d_type, d_mult, d_strat)) | error $[reference [r] cannot be resolved]@r.
+    resolveMember(s_entity, r) == (_, RICHTYPE(d_type, d_mult, d_strat)) | error $[reference [r] cannot be resolved]@r,
+    out_mult == multLub(e_mult, d_mult),
+    out_strat == stratLub(e_strat, d_strat).
