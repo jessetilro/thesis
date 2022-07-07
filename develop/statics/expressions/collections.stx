@@ -21,3 +21,21 @@ rules
     
     out_mult == lowerboundZero(e1_mult),
     out_strat == stratLub(e1_strat, e2_strat).
+    
+  richTypeOfExp(s, OrderBy(e1, x, e2)) = RICHTYPE(e1_type, out_mult, out_strat) :- { s_p s2 e1_mult e1_strat e2_type e2_mult e2_strat }
+    richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
+    
+    new s2, s2 -PARENT-> s,
+    new s_p,
+    setProp(s_p, "ns", "variable"),
+    setProp(s_p, "side", "none"),
+    setProp(s_p, "reltype", "none"),
+    !member[x, (RICHTYPE(e1_type, ONE(), e1_strat), PROPS(s_p))] in s2,
+    
+    richTypeOfExp(s2, e2) == RICHTYPE(e2_type, e2_mult, e2_strat),
+    
+    canCompare(e2_type) | error $[Type mismatch: expected comparable type got [e2_type]]@e2,
+    e2_mult == ONE() | error $[Multiplicity mismatch: expected One got [e2_mult]]@e2,
+    
+    out_mult == toOrdered(e1_mult),
+    out_strat == stratLub(e1_strat, e2_strat).

@@ -13,4 +13,4 @@ model
   }
   
   relation Summary.numbers * <-> 1 Number.summary
-  relation Summary.counting_numbers * = numbers.filter(x => x.counting) <-> ? Number.summary_as_counting
+  relation Summary.counting_numbers * = numbers.filter(x => x.counting).orderBy(x => x.value) <-> ? Number.summary_as_counting
