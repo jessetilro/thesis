@@ -1,0 +1,45 @@
+module statics/functions
+
+imports signatures/develop-sig
+
+imports statics/core
+
+rules
+
+  functionsOk maps functionOk(*, list(*))
+  
+  functionOk : scope * Function
+  
+  functionOk(s, Function(f, ps, t, m, e)) :- { function_s props_s paramtypes type mult richtype }
+  	new function_s,
+  	function_s -PARENT-> s,
+  	new props_s,
+  	
+  	type == typeOfAnyType(s, t),
+  	mult == multOfMultList(m),
+  	// TODO: strat == e strat
+  	richtype == RICHTYPE(type, mult, INCREMENTAL()),
+  	
+  	// TODO: test if expression "e" matches type and mult of function
+  	
+  	declareFunction(s, f, richtype, props_s),
+  	
+  	paramtypes == parametersOk(function_s, ps),
+  	setPropRichtypes(props_s, "paramtypes", paramtypes).
+  
+  parametersOk maps parameterOk(*, list(*)) = list(*)
+  
+  parameterOk : scope * Parameter -> RICHTYPE
+  parameterOk(s, param@Parameter(p, t, m)) = richtype :- { props }
+  	richtype == richtypeOfParameter(s, param),
+  	new props,
+  	!member[p, (richtype, PROPS(props))] in s.
+  
+  richtypesOfParameters maps richtypeOfParameter(*, list(*)) = *
+  
+  richtypeOfParameter : scope * Parameter -> RICHTYPE
+  richtypeOfParameter(s, Parameter(p, t, m)) = RICHTYPE(type, mult, strat) :-
+  	type == typeOfAnyType(s, t),
+  	mult == multOfMultList(m),
+  	strat == INCREMENTAL().
+  

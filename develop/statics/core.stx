@@ -9,6 +9,7 @@ signature
     entity : ID -> TYPE
     entity_extension : ID * scope
     member : ID -> (RICHTYPE * PROPS)
+    function : ID -> (RICHTYPE * PROPS)
     prop : string -> PROPVAL
     
   name-resolution
@@ -476,6 +477,19 @@ rules // name resolution
         min and true
         in s |-> [(_, (_, (richtype, _)))|_].
         
+  declareFunction : scope * ID * RICHTYPE * PROPS
+  
+  declareFunction(s, id, richtype, props) :-
+    !function[id, (richtype, props)] in s.
+
+  resolveFunction : scope * ID -> (ID * RICHTYPE)
+  
+  resolveFunction(s, id) = (id, richtype) :-
+    query function
+      filter PARENT* and { x' :- x' == id }
+        min and true
+        in s |-> [(_, (_, (richtype, _)))].
+        
   resolveThis : scope -> TYPE
         
   resolveThis(s) = ENTITY(s). // todo actually declare "this" and resolve it
@@ -507,3 +521,14 @@ rules // props
   setPropStrat: scope * string * STRAT
   setPropStrat(s, key, strat) :-
     !prop[key, PROPVAL_STRAT(strat)] in s.
+    
+  setPropRichtypes: scope * string * list(RICHTYPE)
+  setPropRichtypes(s, key, richtypes) :-
+  	!prop[key, PROPVAL_RICHTYPES(richtypes)] in s.
+  
+  getProp: scope * string -> PROPVAL
+  getProp(s, key) = propval :-
+  	query prop
+      filter PARENT* and { x' :- x' == key }
+        min and true
+        in s |-> [(_, (_, (propval)))].

@@ -1,0 +1,7 @@
+module statics/data
+
+imports statics/core
+
+rules
+
+	

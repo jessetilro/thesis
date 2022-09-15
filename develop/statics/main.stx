@@ -11,6 +11,7 @@ imports statics/expressions/casts
 imports statics/expressions/references
 imports statics/expressions/functions
 imports statics/expressions/collections
+imports statics/functions
 
 rules // multi-file entry points
 
@@ -35,7 +36,8 @@ rules // module sections
   
   sectionOk(s, ModelSection(models)) :-
     modelsOk(s, models).
-  sectionOk(s, FunctionSection(_)).
+  sectionOk(s, FunctionSection(functions)) :-
+  	functionsOk(s, functions).
   sectionOk(s, DataSection(_)).
   sectionOk(s, ExecuteSection(_)).
   
@@ -240,6 +242,4 @@ rules // models
     @id.type := RICHTYPE(d_type, d_mult, d_strat)
     // TODO: check override (inheritance)
     .
-  
-  
   
