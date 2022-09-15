@@ -98,6 +98,11 @@ rules
   	lift_mult == multLift(p_mult, e_mult),
 	out_mult == multLub(lift_mult, es_mult),
 	out_strat == stratLub(e_strat, es_strat).
+  
+  pairwiseEqual(s, exps@[_ | _], params@[]) = RICHTYPE(NOVALUE(), ONE(), INCREMENTAL()) :-
+  	exps == [] | error $[invalid number of arguments]@exps.
   	
   pairwiseEqual(s, exps@[], params) = RICHTYPE(NOVALUE(), ONE(), INCREMENTAL()) :-
   	params == [] | error $[invalid number of arguments]@exps.
+  	
+  pairwiseEqual(s, [], []) = RICHTYPE(NOVALUE(), ONE(), INCREMENTAL()).
