@@ -3,6 +3,14 @@ module statics/functions
 imports signatures/develop-sig
 
 imports statics/core
+imports statics/expressions/literals
+imports statics/expressions/math
+imports statics/expressions/logic
+imports statics/expressions/multiplicity-operators
+imports statics/expressions/casts
+imports statics/expressions/references
+imports statics/expressions/functions
+imports statics/expressions/collections
 
 rules
 
@@ -10,22 +18,23 @@ rules
   
   functionOk : scope * Function
   
-  functionOk(s, Function(f, ps, t, m, e)) :- { function_s props_s paramtypes type mult richtype }
+  functionOk(s, Function(f, ps, t, m, e)) :- { function_s props_s paramtypes type mult richtype e_type e_mult e_strat }
   	new function_s,
   	function_s -PARENT-> s,
   	new props_s,
   	
-  	type == typeOfAnyType(s, t),
-  	mult == multOfMultList(m),
-  	// TODO: strat == e strat
-  	richtype == RICHTYPE(type, mult, INCREMENTAL()),
-  	
-  	// TODO: test if expression "e" matches type and mult of function
-  	
-  	declareFunction(s, f, richtype, props_s),
+  	declareFunction(s, f, richtype, PROPS(props_s)),
   	
   	paramtypes == parametersOk(function_s, ps),
-  	setPropRichtypes(props_s, "paramtypes", paramtypes).
+  	setPropRichtypes(props_s, "paramtypes", paramtypes),
+  	
+  	RICHTYPE(e_type, e_mult, e_strat) == richTypeOfExp(function_s, e),
+  	type == typeOfAnyType(s, t),
+  	mult == multOfMultList(m),
+  	richtype == RICHTYPE(type, mult, e_strat),
+  	
+  	subtype(e_type, type) | error $[type mismatch: expected [type] got [e_type]]@e,
+  	mult(e_mult, mult) | error $[multiplicity mismatch: expected [mult] got [e_mult]]@e.
   
   parametersOk maps parameterOk(*, list(*)) = list(*)
   

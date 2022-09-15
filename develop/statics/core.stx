@@ -526,8 +526,8 @@ rules // props
   setPropRichtypes(s, key, richtypes) :-
   	!prop[key, PROPVAL_RICHTYPES(richtypes)] in s.
   
-  getProp: scope * string -> PROPVAL
-  getProp(s, key) = propval :-
+  getProp: PROPS * string -> PROPVAL
+  getProp(PROPS(s), key) = propval :-
   	query prop
       filter PARENT* and { x' :- x' == key }
         min and true
