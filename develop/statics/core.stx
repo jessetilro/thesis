@@ -482,13 +482,13 @@ rules // name resolution
   declareFunction(s, id, richtype, props) :-
     !function[id, (richtype, props)] in s.
 
-  resolveFunction : scope * ID -> (ID * RICHTYPE)
+  resolveFunction : scope * ID -> (ID * RICHTYPE * PROPS)
   
-  resolveFunction(s, id) = (id, richtype) :-
+  resolveFunction(s, id) = (id, richtype, props) :-
     query function
       filter PARENT* and { x' :- x' == id }
         min and true
-        in s |-> [(_, (_, (richtype, _)))].
+        in s |-> [(_, (_, (richtype, props)))].
         
   resolveThis : scope -> TYPE
         

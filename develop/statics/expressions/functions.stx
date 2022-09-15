@@ -81,16 +81,23 @@ rules
     multupper(e2_mult) == UONE() | error $[Multiplicity mismatch: Expected One or ZeroOrOne got [e2_mult]]@e2,
     out_strat == stratLub(e1_strat, e2_strat).
     
-  // TODO: check this
-  // Catch all: in statix, as opposed to nabl2, no longer depends on ordering within file.
-  // Instead, is more general, so only matches if no more specific head of a rule matches.
+  richTypeOfExp(s, Function(f, es)) = RICHTYPE(type, out_mult, out_strat) :- { props paramtypes mult strat es_mult es_strat }
+    (_, RICHTYPE(type, mult, strat), props) == resolveFunction(s, f) | error $[missing declaration for function [f]],
+    PROPVAL_RICHTYPES(paramtypes) == getProp(props, "paramtypes"),
+    RICHTYPE(_, es_mult, es_strat) == pairwiseEqual(s, es, paramtypes),
+    out_mult == multLub(mult, es_mult),
+    out_strat == stratLub(strat, es_strat).
   
-  richTypeOfExp(s, Function(f, es)) = RICHTYPE(f_def_type, out_mult, out_strat) :-
-    // TODO: implement function name resolution
-    f_def_type == INT(),
-    out_mult == ONE(),
-    out_strat == INCREMENTAL()
-    .
-   
-  // TODO: implement PairwiseEqual here
-    
+  pairwiseEqual: scope * list(Exp) * list(RICHTYPE) -> RICHTYPE
+  pairwiseEqual(s, exps@[e | es], params) = RICHTYPE(NOVALUE(), out_mult, out_strat) :- { p ps e_type e_mult e_strat p_type p_mult p_strat es_mult es_strat lift_mult }
+  	params == [p | ps] | error $[invalid number of arguments],
+  	RICHTYPE(e_type, e_mult, e_strat) == richTypeOfExp(s, e),
+  	RICHTYPE(p_type, p_mult, p_strat) == p,
+  	subtype(e_type, p_type) | error $[type error: expected [p_type] but got [e_type]],
+  	RICHTYPE(_, es_mult, es_strat) == pairwiseEqual(s, es, ps),
+  	lift_mult == multLift(p_mult, e_mult),
+	out_mult == multLub(lift_mult, es_mult),
+	out_strat == stratLub(e_strat, es_strat).
+  	
+  pairwiseEqual(s, exps@[], params) = RICHTYPE(NOVALUE(), ONE(), INCREMENTAL()) :-
+  	params == [] | error $[invalid number of arguments]@exps.

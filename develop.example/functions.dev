@@ -1,0 +1,13 @@
+module functions
+
+model
+
+  entity Object {
+  	leftInput : Int
+  	rightInput : Int
+  	output : Boolean = gt(1, 2)
+  }
+
+functions
+  gt(left : Int, right: Int) : Boolean = left > right
+	
