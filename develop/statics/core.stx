@@ -504,11 +504,17 @@ rules // name resolution
     
   subtypeEntity: TYPE * TYPE
   subtypeEntity(ENTITY(x), ENTITY(x)).
-  subtypeEntity(ENTITY(s_entity), ENTITY(s_super)) :-
+  subtypeEntity(ENTITY(s_entity), ENTITY(s_super)) :- {results}
   	query ()
   		filter INHERIT+ and true
   		min and true
-  		in s_entity |-> [(_, s_super) | _].
+  		in s_entity |-> results,
+  	includesScope(results, s_super).
+  
+  includesScope : list((path * scope)) * scope
+  includesScope([(_, x) | _], x).
+  includesScope([_ | xs], x) :- includesScope(xs, x).
+  
   
 rules // partial classes / extension
   
