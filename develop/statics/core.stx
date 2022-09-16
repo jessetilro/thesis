@@ -474,7 +474,7 @@ rules // name resolution
       
   resolveMember(s, id) = (id, richtype) :-
     query member
-      filter INHERIT* EXTEND? and { x' :- x' == id }
+      filter PARENT* INHERIT* EXTEND? and { x' :- x' == id }
         min and true
         in s |-> [(_, (_, (richtype, _)))|_].
         
