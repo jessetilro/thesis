@@ -336,7 +336,7 @@ rules // types
   
   subtype(T, T).
   subtype(NOVALUE(), _).
-  subtype(T1, T2) :- { X } subtype(T1, X), subtype(X, T2).
+  subtype(T1@ENTITY(_), T2@ENTITY(_)) :- subtypeEntity(T1, T2).
   
   lubtype : TYPE * TYPE -> TYPE
   lubtype(X, X) = X.
@@ -501,6 +501,14 @@ rules // name resolution
   declareInheritance(s_entity, [OptionalExtends(Extends(parent_entity))]) :- { s_parent }
     resolveEntity(s_entity, parent_entity) == ENTITY(s_parent),
     s_entity -INHERIT-> s_parent.
+    
+  subtypeEntity: TYPE * TYPE
+  subtypeEntity(ENTITY(x), ENTITY(x)).
+  subtypeEntity(ENTITY(s_entity), ENTITY(s_super)) :-
+  	query ()
+  		filter INHERIT+ and true
+  		min and true
+  		in s_entity |-> [(_, s_super) | _].
   
 rules // partial classes / extension
   

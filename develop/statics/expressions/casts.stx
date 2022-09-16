@@ -13,5 +13,5 @@ rules
   { e_type e_mult }
     richTypeOfExp(s, e1) == RICHTYPE(e_type, e_mult, e_strat),
     t_type == typeOfEntityType(s, t),
-    subtype(t_type, e_type) | error $[[t] is not a subtype of [e_type]]@t,
+    subtype(t_type, e_type) | error $[[t_type] is not a subtype of [e_type]]@t,
     out_mult == lowerboundZero(e_mult).
