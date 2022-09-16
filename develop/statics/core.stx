@@ -432,6 +432,7 @@ rules // type checking
   typeOfAnyType : scope * AnyType -> TYPE
   
   typeOfAnyType(_, TypePrimitive(t)) = typeOfPrimitiveType(t).
+  typeOfAnyType(s, TypeEntity(x)) = typeOfEntityType(s, x).
   
   typeOfPrimitiveType : PrimitiveType -> TYPE
   
@@ -441,10 +442,10 @@ rules // type checking
   typeOfPrimitiveType(Int()) = INT().
   typeOfPrimitiveType(String()) = STRING().
   
-  typeOfEntityType : EntityType -> TYPE
+  typeOfEntityType : scope * EntityType -> TYPE
   
-  typeOfEntityType(EntityType(x)) = ENTITY(s) :-
-    new s. // todo implement resolution
+  typeOfEntityType(s, EntityType(id)) = type :-
+  	type == resolveEntity(s, id).
     
 rules // name resolution
 
