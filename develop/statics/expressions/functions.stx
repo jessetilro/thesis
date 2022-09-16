@@ -51,8 +51,7 @@ rules
     multupper(e1_mult) == UMANY() | error $[Expected multiplicity of higher than One]@e1.
     
   richTypeOfExp(s, Function("count", [e1])) = RICHTYPE(INT(), ONE(), e1_strat) :- { e1_type e1_mult }
-    richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
-    isType(e1_type).
+    richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat).
     
   richTypeOfExp(s, Function("first", [e1])) = RICHTYPE(e1_type, out_mult, e1_strat) :- { e1_mult }
     richTypeOfExp(s, e1) == RICHTYPE(e1_type, e1_mult, e1_strat),
