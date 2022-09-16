@@ -239,7 +239,26 @@ rules // models
     setProp(s_p, "inlining", "not_inline"),
     
     !member[id, (RICHTYPE(d_type, d_mult, d_strat), PROPS(s_p))] in s,
-    @id.type := RICHTYPE(d_type, d_mult, d_strat)
-    // TODO: check override (inheritance)
-    .
+    @id.type := RICHTYPE(d_type, d_mult, d_strat).
+  
+  memberOk(s, AbstractAttribute(id, type, mult, strat)) :-
+  { declared decl_richtype d_type d_mult d_strat rid s_p }
+
+    d_type == typeOfPrimitiveType(type),
+    d_mult == multOfMultList(mult),
+    d_strat == stratOfStratList(strat),
+
+    new s_p,
+    setProp(s_p, "ns", "attribute"),
+    setProp(s_p, "derivationtype", "abstract"),
+    setProp(s_p, "reltype", "none"),
+    setProp(s_p, "side", "none"),
+    setPropStrat(s_p, "calculationstrategy", d_strat),
+    setProp(s_p, "inlining", "not_inline"),
+    
+    !member[id, (RICHTYPE(d_type, d_mult, d_strat), PROPS(s_p))] in s,
+    
+    @id.type := RICHTYPE(d_type, d_mult, d_strat).
+    
+  // TODO: check overriding for attribute declarations
   
