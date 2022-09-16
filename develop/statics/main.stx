@@ -51,7 +51,7 @@ rules // models
     new s_model, s_model -PARENT-> s,
     setProp(s_model, "kind", "entity123"),
     declareEntity(s, id, s_model),
-    resolveEntity(s_model, id) == ENTITY(s_resolve) | error $[duplicate definition of entity [id]]@id,
+    resolveEntity(s_model, id) == (_, ENTITY(s_resolve)) | error $[duplicate definition of entity [id]]@id,
     @id.type := ENTITY(s_resolve),
     extendScopes(resolveEntityExtensions(s, id), s_model),
     membersOk(s_model, members),
@@ -61,14 +61,14 @@ rules // models
     new s_model, s_model -PARENT-> s,
     setProp(s_model, "kind", "first_class_relation"),
     declareEntity(s, id, s_model),
-    resolveEntity(s_model, id) == ENTITY(s_resolve) | error $[duplicate definition of entity [id]]@id,
+    resolveEntity(s_model, id) == (_, ENTITY(s_resolve)) | error $[duplicate definition of entity [id]]@id,
     @id.type := ENTITY(s_resolve),
     membersOk(s_model, members).
     
   modelOk(s, Relation(e1, r1, m1_optional, m2_optional, e2, r2)) :-
     { s_e1 s_e2 s_r1 s_r2 m1 m2 id1 id2 s_p1 s_p2 }
-    ENTITY(s_e1) == resolveEntity(s, e1) | error $[entity [e1] is not declared],
-    ENTITY(s_e2) == resolveEntity(s, e2) | error $[entity [e2] is not declared],
+    (_, ENTITY(s_e1)) == resolveEntity(s, e1) | error $[entity [e1] is not declared],
+    (_, ENTITY(s_e2)) == resolveEntity(s, e2) | error $[entity [e2] is not declared],
     m1 == multOfSpaceMultList(m1_optional),
     m2 == multOfSpaceMultList(m2_optional),
     r1 == [ID2DotID(id1)],
@@ -106,8 +106,8 @@ rules // models
    
   modelOk(s, RelationDerived(e1, r1, m1_optional, expr, m2_optional, e2, r2, str)) :-
     { e1_type e2_type s_e1 s_e2 s_r1 s_r2 m1 m2 id1 id2 s_p1 s_p2 strat expr_type expr_entity expr_mult expr_strat }
-    e1_type@ENTITY(s_e1) == resolveEntity(s, e1) | error $[entity [e1] is not declared],
-    e2_type@ENTITY(s_e2) == resolveEntity(s, e2) | error $[entity [e2] is not declared],
+    (_, e1_type@ENTITY(s_e1)) == resolveEntity(s, e1) | error $[entity [e1] is not declared],
+    (_, e2_type@ENTITY(s_e2)) == resolveEntity(s, e2) | error $[entity [e2] is not declared],
     m1 == multOfSpaceMultList(m1_optional),
     m2 == multOfSpaceMultList(m2_optional),
     r1 == [ID2DotID(id1)],

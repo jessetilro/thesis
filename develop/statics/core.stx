@@ -445,7 +445,7 @@ rules // type checking
   typeOfEntityType : scope * EntityType -> TYPE
   
   typeOfEntityType(s, EntityType(id)) = type :-
-  	type == resolveEntity(s, id).
+  	(_, type) == resolveEntity(s, id).
     
 rules // name resolution
 
@@ -454,13 +454,13 @@ rules // name resolution
   declareEntity(s, id, s_model) :-
     !entity[id, ENTITY(s_model)] in s.
 
-  resolveEntity : scope * ID -> TYPE
+  resolveEntity : scope * ID -> (ID * TYPE)
   
-  resolveEntity(s, id) = type :-
+  resolveEntity(s, ref_id) = (decl_id, type) :-
     query entity
-      filter PARENT* and { x' :- x' == id }
+      filter PARENT* and { x' :- x' == ref_id }
         min and true
-        in s |-> [(_, (_, type))].
+        in s |-> [(_, (decl_id, type))].
         
   resolveEntityExtensions : scope * ID -> list((path * (string * scope)))
      
@@ -472,11 +472,11 @@ rules // name resolution
      
   resolveMember : scope * ID -> (ID * RICHTYPE) 
       
-  resolveMember(s, id) = (id, richtype) :-
+  resolveMember(s, ref_id) = (decl_id, richtype) :-
     query member
-      filter PARENT* INHERIT* EXTEND? and { x' :- x' == id }
+      filter PARENT* INHERIT* EXTEND? and { x' :- x' == ref_id }
         min and true
-        in s |-> [(_, (_, (richtype, _)))|_].
+        in s |-> [(_, (decl_id, (richtype, _)))|_].
         
   declareFunction : scope * ID * RICHTYPE * PROPS
   
@@ -485,11 +485,11 @@ rules // name resolution
 
   resolveFunction : scope * ID -> (ID * RICHTYPE * PROPS)
   
-  resolveFunction(s, id) = (id, richtype, props) :-
+  resolveFunction(s, ref_id) = (decl_id, richtype, props) :-
     query function
-      filter PARENT* and { x' :- x' == id }
+      filter PARENT* and { x' :- x' == ref_id }
         min and true
-        in s |-> [(_, (_, (richtype, props)))].
+        in s |-> [(_, (decl_id, (richtype, props)))].
         
   resolveThis : scope -> TYPE
         
@@ -499,7 +499,7 @@ rules // name resolution
   
   declareInheritance(s_entity, []).
   declareInheritance(s_entity, [OptionalExtends(Extends(parent_entity))]) :- { s_parent }
-    resolveEntity(s_entity, parent_entity) == ENTITY(s_parent),
+    resolveEntity(s_entity, parent_entity) == (_, ENTITY(s_parent)),
     s_entity -INHERIT-> s_parent.
     
   subtypeEntity: TYPE * TYPE
