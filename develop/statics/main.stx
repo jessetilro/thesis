@@ -115,6 +115,7 @@ rules // models
     strat == stratOfStratList(str),
     richTypeOfExp(s_e1, expr) == RICHTYPE(expr_type@ENTITY(_), expr_mult, expr_strat) | error $[expression should yield an entity type]@expr,
     
+    try { m2 == ZERO_MORE() } | warning $[warning: multiplicity [m2] cannot be statically guaranteed]@m2,
     subtype(expr_type, e2_type) | error $[type mismatch: expected [e2_type] got [expr_type]]@expr,
     mult(expr_mult, m1) | error $[multiplicity mismatch: expected [m1] got [expr_mult]]@expr,
     strat(expr_strat, strat) | error $[strategy mismatch: expected [strat] got [expr_strat]]@expr,    
