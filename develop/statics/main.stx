@@ -34,6 +34,7 @@ rules // module sections
   sectionsOk maps sectionOk(*, list(*))
   sectionOk : scope * ModuleSection
   
+  sectionOk(s, ConfigSection(_)).
   sectionOk(s, ModelSection(models)) :-
     modelsOk(s, models).
   sectionOk(s, FunctionSection(functions)) :-
