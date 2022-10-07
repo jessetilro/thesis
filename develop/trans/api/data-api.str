@@ -50,10 +50,10 @@ rules // manipulate
   
   datadef-set-data(|op) = DataSection(!op)
   
-  entityinstance-set-name(|name) = EntityInstance(!name, id, id)
-  entityinstance-set-name(|name) = EntityInstanceNoType(!name, id)
-  entityinstance-set-name(|name) = RelationInstance(!name, id, id)
-  entityinstance-set-name(|name) = RelationInstanceNoType(!name, id)
+  entityinstance-set-name(|name) = EntityInstance(!Some(name), id, id)
+  entityinstance-set-name(|name) = EntityInstanceNoType(!Some(name), id)
+  entityinstance-set-name(|name) = RelationInstance(!Some(name), id, id)
+  entityinstance-set-name(|name) = RelationInstanceNoType(!Some(name), id)
   
   membervalue-set-member(member) = MemberValue(member, id)
   
