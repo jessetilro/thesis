@@ -474,8 +474,8 @@ rules // name resolution
       
   resolveMember(s, ref_id) = (decl_id, richtype) :-
     query member
-      filter PARENT* INHERIT* EXTEND? and { x' :- x' == ref_id }
-        min and true
+      filter PARENT* EXTEND? (INHERIT|EXTEND)* and { x' :- x' == ref_id }
+        min $ < INHERIT and true
         in s |-> [(_, (decl_id, (richtype, _)))|_].
         
   declareFunction : scope * ID * RICHTYPE * PROPS
