@@ -3,23 +3,24 @@ module desugaring/desugar
 imports // functions
 
   desugaring/alternatives
-//  desugaring/omitted
+  desugaring/omitted
   lib/origin
   
 rules
 
+//  desugar-somes; ---> originally first invoked strategy in desugar-before-analysis
+
   desugar-before-analysis =
-    desugar-alternatives
-//  desugar-somes
-//    generate-omitted;
-//    warning-on-missing-origin
+    desugar-alternatives;
+    generate-omitted;
+    warning-on-missing-origin
 
 //  desugar-after-analysis = 
 //    warning-on-missing-origin
 
 
 rules // general
-
-  desugar-somes = bottomup(try(desugar-some))
-  desugar-some: Some(a) -> a where !a;not(?OnDemand());not(?Incremental());not(?Eventual());not(?OnDemandEventual());not(?OnDemandIncremental())
+//
+//  desugar-somes = bottomup(try(desugar-some))
+//  desugar-some: Some(a) -> a where !a;not(?OnDemand());not(?Incremental());not(?Eventual());not(?OnDemandEventual());not(?OnDemandIncremental())
 

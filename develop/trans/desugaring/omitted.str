@@ -48,15 +48,15 @@ rules // module strategy
 
 rules // functions
 
-  function-generate-mult = function-has-no-mult; function-set-mult(!One())
+  function-generate-mult = function-has-no-mult; function-set-mult(!Some(One()))
 
 rules // params
 
-  param-generate-mult = param-has-no-mult; param-set-mult(!One())
+  param-generate-mult = param-has-no-mult; param-set-mult(!Some(One()))
 
 rules // attr fields
 
-  attr-generate-mult = attr-has-no-mult; attr-set-mult(!One())
+  attr-generate-mult = attr-has-no-mult; attr-set-mult(!Some(One()))
     
 rules // role fields
 
@@ -65,7 +65,7 @@ rules // role fields
     try(role-generate-mult);
     try(role-generate-name)
 
-  role-generate-mult = role-has-no-mult;     role-set-mult(!ZeroOrMore())
+  role-generate-mult = role-has-no-mult;     role-set-mult(!Some(ZeroOrMore()))
   role-generate-name = role-has-no-name; ?r; role-set-name(!r;role-get-type;lcfirst)
 
 rules
@@ -93,8 +93,8 @@ rules // relation fields
   rel-generate-rel2a = relation-has-no-rel2 ; ?r; not(relation-has-no-rel1); relation-is-same-type; relation-set-rel2(<custom-origin(|<relation-get-type2>r)>$[[<relation-get-rel1>r]Inverse])
   rel-generate-rel1  = relation-has-no-rel1 ; ?r; relation-set-rel1 (<custom-origin(|<relation-get-type1>r)>$[[<relation-get-type2;lcfirst>r]])
   rel-generate-rel2  = relation-has-no-rel2 ; ?r; relation-set-rel2 (<custom-origin(|<relation-get-type2>r)>$[[<relation-get-type1;lcfirst>r]])
-  rel-generate-mult1 = relation-has-no-mult1;     relation-set-mult1(!ZeroOrMore())
-  rel-generate-mult2 = relation-has-no-mult2;     relation-set-mult2(!ZeroOrMore())
+  rel-generate-mult1 = relation-has-no-mult1;     relation-set-mult1(!Some(ZeroOrMore()))
+  rel-generate-mult2 = relation-has-no-mult2;     relation-set-mult2(!Some(ZeroOrMore()))
 
 rules // shortcutrel fields
 
@@ -111,8 +111,8 @@ rules // shortcutrel fields
   shortcutrel-generate-rel2a = shortcutrel-has-no-rel2 ; ?r; not(shortcutrel-has-no-rel1); shortcutrel-is-same-type; shortcutrel-set-rel2(<custom-origin(|<shortcutrel-get-type2>r)>$[[<shortcutrel-get-rel1>r]Inverse])
   shortcutrel-generate-rel1  = shortcutrel-has-no-rel1 ; ?r; shortcutrel-set-rel1 (<custom-origin(|<shortcutrel-get-type1>r)>$[[<shortcutrel-get-type2;lcfirst>r]])
   shortcutrel-generate-rel2  = shortcutrel-has-no-rel2 ; ?r; shortcutrel-set-rel2 (<custom-origin(|<shortcutrel-get-type2>r)>$[[<shortcutrel-get-type1;lcfirst>r]])
-  shortcutrel-generate-mult1 = shortcutrel-has-no-mult1;     shortcutrel-set-mult1(!ZeroOrMore())
-  shortcutrel-generate-mult2 = shortcutrel-has-no-mult2;     shortcutrel-set-mult2(!ZeroOrMore())
+  shortcutrel-generate-mult1 = shortcutrel-has-no-mult1;     shortcutrel-set-mult1(!Some(ZeroOrMore()))
+  shortcutrel-generate-mult2 = shortcutrel-has-no-mult2;     shortcutrel-set-mult2(!Some(ZeroOrMore()))
 
 rules // roles -> inv (context sensitive)
   
@@ -276,17 +276,17 @@ rules // config
   generate-default-backend-java: c -> <custom-origin(|c)>JavaBackend(None())
   generate-default-backend-js  : c -> <custom-origin(|c)>JavascriptBackend(<custom-origin(|c)> None(), <custom-origin(|c)> None())
   
-  backend-generate-defaults : j@JavaBackend(None()) -> JavaBackend(<custom-origin(|j)>Execute())
+  backend-generate-defaults : j@JavaBackend(None()) -> JavaBackend(Some(<custom-origin(|j)>Execute()))
   
   backend-generate-defaults = ?b@JavascriptBackend(phase, target) ; JavascriptBackend(
         try(javascript-backend-default-phase(|b))
       , try(javascript-backend-default-target(|b))
     ) 
 
-  javascript-backend-default-phase(|o)  : None() -> <custom-origin(|o)> Execute()
-  javascript-backend-default-target(|o) : None() -> <custom-origin(|o)> JavascriptTarget()
+  javascript-backend-default-phase(|o)  : None() -> <custom-origin(|o)> Some(Execute())
+  javascript-backend-default-target(|o) : None() -> <custom-origin(|o)> Some(JavascriptTarget())
   
-  javascript-backend-default-target(|o) : HtmlTarget(None()) -> HtmlTarget(resolve)
+  javascript-backend-default-target(|o) : HtmlTarget(None()) -> HtmlTarget(Some(resolve))
     with
       resolve := <custom-origin(|o)> ResolveInline()
   
