@@ -243,7 +243,7 @@ rules // strategy lattice
   
   stratOfStratList : list(Strategy) -> STRAT
   stratOfStratList([x]) = stratOfStrat(x).
-  stratOfStratList([]) = INCREMENTAL(). // todo inherit from entity / module
+  stratOfStratList([]) = EVENTUAL(). // todo inherit from entity / module
   
   stratOfStrat : Strategy -> STRAT
   stratOfStrat(Incremental()) = INCREMENTAL().

@@ -24,7 +24,7 @@ model
   
   entity Category {
     name : String = "" (default)
-    path : String = (parent.path <+ "") + " / " + name (incremental)
+    path : String = (parent.path <+ "") + " / " + name
   }
   
   relation Category.parent ? <-> * Category.children

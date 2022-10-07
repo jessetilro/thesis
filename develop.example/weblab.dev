@@ -1,20 +1,20 @@
 module weblabmodel (eventual)
 
-//config
-//
-//  backend: WebDSL
-//    ui: None
-//    embedded: yes
-//    dont generate Assignment.title               field // (name, searchable)
-//    dont generate AdditionalGradeDef.description field // (name)
-//    dont generate SubmissionGrade.traceFinalized field // : WikiText
-//    dont generate AssignmentCollectionSubmission.submissions2 expression, incoming paths // specified as HQL query, and dirty flagged manually
-//    eventual threads:  4
-//    eventual interval: 5 ms
-//    eventual batch size: 1
-//    log eventual update: no
-//    log eventual status: yes
-//    log incremental: no
+config
+
+  backend: WebDSL
+    ui: None
+    embedded: yes
+    dont generate Assignment.title               field // (name, searchable)
+    dont generate AdditionalGradeDef.description field // (name)
+    dont generate SubmissionGrade.traceFinalized field // : WikiText
+    dont generate AssignmentCollectionSubmission.submissions2 expression, incoming paths // specified as HQL query, and dirty flagged manually
+    eventual threads:  4
+    eventual interval: 5 ms
+    eventual batch size: 1
+    log eventual update: no
+    log eventual status: yes
+    log incremental: no
 
 model
 

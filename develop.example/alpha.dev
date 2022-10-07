@@ -5,26 +5,26 @@ model
   entity Alpha {
     input : Int
   
-    add : Int = 0 + 0
+    add : Int = 0 + 0 (incremental)
     division : Float ? = 2.0 / 0.0 (on-demand)
     modulo : Float ? = 1 / (2 % 0) (on-demand)
-    str : String = "abc" + "123"
-    bool : Boolean = not(true) and (1.0 == 2.0) or ((1 != 2) and (4 < 3 or 1 >= 2))
-    conditional : Float = if (true) 1.0 else 2.0
-    cast : Float = 1 as Float
+    str : String = "abc" + "123" (incremental)
+    bool : Boolean = not(true) and (1.0 == 2.0) or ((1 != 2) and (4 < 3 or 1 >= 2)) (incremental)
+    conditional : Float = if (true) 1.0 else 2.0 (incremental)
+    cast : Float = 1 as Float (incremental)
     test : Int ? = division as Int (on-demand)
-    multiple : Int + = 1
+    multiple : Int + = 1  (incremental)
     aggregate : Int = avg(multiple) + add (incremental)
     attr : Float ?
     
     f : Float = division <+ 0.0 (on-demand)
     
-    test : Int = beta.number
+    test : Int = beta.number (incremental)
   }
   
   entity Beta {
-    number : Int = 1
-    test : Int = alpha.add
+    number : Int = 1  (incremental)
+    test : Int = alpha.add (incremental)
   }
   
-  relation Alpha.beta <-> Beta.alpha
+  relation Alpha.beta 1 <-> 1 Beta.alpha
