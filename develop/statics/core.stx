@@ -350,6 +350,12 @@ rules // types
   lubtype(STRING(), NOVALUE()) = STRING().
   lubtype(BOOLEAN(), NOVALUE()) = BOOLEAN().
   lubtype(DATETIME(), NOVALUE()) = DATETIME().
+  lubtype(ENTITY(X), ENTITY(X)) = ENTITY(X).
+  lubtype(T1@ENTITY(s1), T2@ENTITY(s2)) = ENTITY(s3) :- {scopes1 scopes2 shared_scopes}
+    scopes1 == superScopes(s1),
+    scopes2 == superScopes(s2),
+    shared_scopes == intersection(scopes1, scopes2, []),
+    [s3 | _] == shared_scopes.
   
   cast : TYPE * TYPE
   cast(INT(), FLOAT()).
@@ -510,6 +516,23 @@ rules // name resolution
   		min and true
   		in s_entity |-> results,
   	includesScope(results, s_super).
+  	
+  superScopes: scope -> list((path * scope))
+  superScopes(s) = results :-
+  	query ()
+  		filter INHERIT+ and true
+  		min and true
+  		in s |-> results.
+  
+  intersection: list((path * scope)) * list((path * scope)) * list(scope) -> list(scope)
+  intersection([(_, x) | xs], ys, acc) = result :-
+  	includesScope(ys, x),
+  	intersection(xs, ys, [x | acc]) == result. 
+  intersection([_ | xs], [_ | ys], acc) = result :-
+  	intersection(xs, ys, acc) == result.
+  intersection(_, [], acc) = acc.
+  intersection([], _, acc) = acc.
+  intersection([], [], acc) = acc.
   
   includesScope : list((path * scope)) * scope
   includesScope([(_, x) | _], x).
