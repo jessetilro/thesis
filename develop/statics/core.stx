@@ -354,7 +354,7 @@ rules // types
   lubtype(T1@ENTITY(s1), T2@ENTITY(s2)) = ENTITY(s3) :- {scopes1 scopes2 shared_scopes}
     scopes1 == superScopes(s1),
     scopes2 == superScopes(s2),
-    shared_scopes == intersection(scopes1, scopes2, []),
+    shared_scopes == intersection(scopes1, scopes2),
     [s3 | _] == shared_scopes.
   
   cast : TYPE * TYPE
@@ -524,15 +524,29 @@ rules // name resolution
   		min and true
   		in s |-> results.
   
-  intersection: list((path * scope)) * list((path * scope)) * list(scope) -> list(scope)
-  intersection([(_, x) | xs], ys, acc) = result :-
-  	includesScope(ys, x),
-  	intersection(xs, ys, [x | acc]) == result. 
-  intersection([_ | xs], [_ | ys], acc) = result :-
-  	intersection(xs, ys, acc) == result.
-  intersection(_, [], acc) = acc.
-  intersection([], _, acc) = acc.
-  intersection([], [], acc) = acc.
+  intersection: list((path * scope)) * list((path * scope)) -> list(scope)
+  intersection([(_, x) | xtail], [(_, x) | ytail]) = [x | intersection(xtail, ytail)].
+  intersection([(_, x)], [(_, x) | tail]) = [x].
+  intersection([(_, x) | tail], [(_, x)]) = [x].
+  intersection([(_, x)], [(_, x)]) = [x].
+  
+  intersection([(_, x) | tail], ys) = concat(intersection([(_, x)], ys), intersection(tail, ys)).
+  intersection([(_, x)], [_ | tail]) = intersection([(_, x)], tail).
+  
+  intersection([(_, x) | tail], []) = [].
+  intersection([(_, x)], []) = [].
+  intersection([], [(_, x) | tail]) = [].
+  intersection([], [(_, x)]) = [].
+  intersection([(_, x)], [(_, y)]) = [].
+  
+  intersection(_, []) = [].
+  intersection([], _) = [].
+  intersection([], []) = [].
+  
+  concat: list(scope) * list(scope) -> list(scope)
+  concat([x | xs], ls) = [x | concat(xs, ls)].
+  concat(ls, []) = ls.
+  concat([], ls) = ls.
   
   includesScope : list((path * scope)) * scope
   includesScope([(_, x) | _], x).
