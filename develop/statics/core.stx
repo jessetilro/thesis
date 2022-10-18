@@ -352,6 +352,7 @@ rules // types
   lubtype(BOOLEAN(), NOVALUE()) = BOOLEAN().
   lubtype(DATETIME(), NOVALUE()) = DATETIME().
   lubtype(ENTITY(X), NOVALUE()) = ENTITY(X).
+  lubtype(ENTITY(X), ENTITY(X)) = ENTITY(X).
   lubtype(T1@ENTITY(s1), T2@ENTITY(s2)) = ENTITY(s3) :- {scopes1 scopes2 shared_scopes}
     scopes1 == superScopes(s1),
     scopes2 == superScopes(s2),

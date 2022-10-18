@@ -17,7 +17,7 @@ model
   }
   
   entity Site {
-    test : Boolean = sub1 == sub2 and sub1 == super
+    test : Boolean = sub1 == sub2 and sub1 == super and sub1 == sub1
     sub : SuperSuper = if(true) sub1
   }
   
