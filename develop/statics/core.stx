@@ -345,12 +345,13 @@ rules // types
   lubtype(NOVALUE(), STRING()) = STRING().
   lubtype(NOVALUE(), BOOLEAN()) = BOOLEAN().
   lubtype(NOVALUE(), DATETIME()) = DATETIME().
+  lubtype(NOVALUE(), ENTITY(X)) = ENTITY(X).
   lubtype(INT(), NOVALUE()) = INT().
   lubtype(FLOAT(), NOVALUE()) = FLOAT().
   lubtype(STRING(), NOVALUE()) = STRING().
   lubtype(BOOLEAN(), NOVALUE()) = BOOLEAN().
   lubtype(DATETIME(), NOVALUE()) = DATETIME().
-  lubtype(ENTITY(X), ENTITY(X)) = ENTITY(X).
+  lubtype(ENTITY(X), NOVALUE()) = ENTITY(X).
   lubtype(T1@ENTITY(s1), T2@ENTITY(s2)) = ENTITY(s3) :- {scopes1 scopes2 shared_scopes}
     scopes1 == superScopes(s1),
     scopes2 == superScopes(s2),

@@ -1,0 +1,28 @@
+module beta
+
+model
+	entity SuperSuper {
+	}
+
+  entity Super extends SuperSuper {
+    super : Int = 42
+  }
+
+  entity Sub1 extends Super {
+  }
+  entity Sub2 extends SuperSuper {
+  }
+  
+  entity Other {
+  }
+  
+  entity Site {
+    test : Boolean = sub1 == sub2 and sub1 == super
+    sub : SuperSuper = if(true) sub1
+  }
+  
+  relation Site.site 1 <-> 1 Site.site_
+  relation Site.other 1 <-> 1 Other.site
+  relation Site.sub1 1 <-> 1 Sub1.site1
+  relation Site.sub2 1 <-> 1 Sub2.site1
+  relation Site.super 1 <-> 1 Super.site_super
