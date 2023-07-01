@@ -24,7 +24,7 @@
       BOOLEAN : TYPE
       DATETIME : TYPE
       NOVALUE : TYPE
-      ENTITY : scope -> TYPE
+      ENTITY : ID * scope -> TYPE
       
       ONE : MULT
       ZERO_ONE : MULT

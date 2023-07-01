@@ -45,7 +45,7 @@ rules
   	{ this_richtype this_type this_mult this_strat s_entity
   	  member_richtype member_type member_mult member_strat s_member_props
   	  s_member_value }
-  	this_richtype@RICHTYPE(ENTITY(s_entity), this_mult, this_strat) == resolveThisRichtype(s_entity_instance),
+  	this_richtype@RICHTYPE(ENTITY(_, s_entity), this_mult, this_strat) == resolveThisRichtype(s_entity_instance),
   	(member_richtype@RICHTYPE(member_type, member_mult, member_strat), PROPS(s_member_props)) == resolveMemberWithProps(s_entity, member_name),
   	!member[member_name, (member_richtype, PROPS(s_member_props))] in s_entity_instance,
   	new s_member_value,

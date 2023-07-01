@@ -361,7 +361,7 @@ rules // types
   
   subtype(T, T).
   subtype(NOVALUE(), _).
-  subtype(T1@ENTITY(_), T2@ENTITY(_)) :- subtypeEntity(T1, T2).
+  subtype(T1@ENTITY(_, _), T2@ENTITY(_, _)) :- subtypeEntity(T1, T2).
   
   lubtype : TYPE * TYPE -> TYPE
   lubtype(X, X) = X.
@@ -370,15 +370,15 @@ rules // types
   lubtype(NOVALUE(), STRING()) = STRING().
   lubtype(NOVALUE(), BOOLEAN()) = BOOLEAN().
   lubtype(NOVALUE(), DATETIME()) = DATETIME().
-  lubtype(NOVALUE(), ENTITY(X)) = ENTITY(X).
+  lubtype(NOVALUE(), ENTITY(_, X)) = ENTITY(_, X).
   lubtype(INT(), NOVALUE()) = INT().
   lubtype(FLOAT(), NOVALUE()) = FLOAT().
   lubtype(STRING(), NOVALUE()) = STRING().
   lubtype(BOOLEAN(), NOVALUE()) = BOOLEAN().
   lubtype(DATETIME(), NOVALUE()) = DATETIME().
-  lubtype(ENTITY(X), NOVALUE()) = ENTITY(X).
-  lubtype(ENTITY(X), ENTITY(X)) = ENTITY(X).
-  lubtype(T1@ENTITY(s1), T2@ENTITY(s2)) = ENTITY(s3) :- {scopes1 scopes2 shared_scopes}
+  lubtype(ENTITY(_, X), NOVALUE()) = ENTITY(_, X).
+  lubtype(ENTITY(_, X), ENTITY(_, X)) = ENTITY(_, X).
+  lubtype(T1@ENTITY(_, s1), T2@ENTITY(_, s2)) = ENTITY(_, s3) :- {scopes1 scopes2 shared_scopes}
     scopes1 == superScopes(s1),
     scopes2 == superScopes(s2),
     shared_scopes == intersection(scopes1, scopes2),
@@ -497,7 +497,7 @@ rules // name resolution
   declareEntity : scope * ID * scope
   
   declareEntity(s, id, s_model) :-
-    !entity[id, ENTITY(s_model)] in s.
+    !entity[id, ENTITY(id, s_model)] in s.
 
   resolveEntity : scope * ID -> (ID * TYPE)
   
@@ -508,11 +508,7 @@ rules // name resolution
         in s |-> [(_, (decl_id, type))].
        
   nameOfEntityType : TYPE -> ID
-  nameOfEntityType(ENTITY(s)) = id :-
-    query entity
-      filter PARENT* and true
-        min and true
-        in s |-> [(_, (id, _)) | _].
+  nameOfEntityType(ENTITY(id, _)) = id.
         
   resolveEntityExtensions : scope * ID -> list((path * (string * scope)))
      
@@ -559,7 +555,7 @@ rules // name resolution
         in s |-> [(_, (decl_id, (richtype, props)))].
         
   resolveThisType : scope -> TYPE
-  resolveThisType(s) = ENTITY(s). // todo actually declare "this" and resolve it
+  resolveThisType(s) = ENTITY(_, s). // todo actually declare "this" and resolve it
   
   declareThisRichtype : scope * RICHTYPE
   declareThisRichtype(s, richtype) :- { s_props }
@@ -587,12 +583,12 @@ rules // name resolution
   
   declareInheritance(s_entity, []).
   declareInheritance(s_entity, [OptionalExtends(Extends(parent_entity))]) :- { s_parent }
-    resolveEntity(s_entity, parent_entity) == (_, ENTITY(s_parent)),
+    resolveEntity(s_entity, parent_entity) == (_, ENTITY(_, s_parent)),
     s_entity -INHERIT-> s_parent.
     
   subtypeEntity: TYPE * TYPE
-  subtypeEntity(ENTITY(x), ENTITY(x)).
-  subtypeEntity(ENTITY(s_entity), ENTITY(s_super)) :- {results}
+  subtypeEntity(ENTITY(_, x), ENTITY(_, x)).
+  subtypeEntity(ENTITY(_, s_entity), ENTITY(_, s_super)) :- {results}
   	query ()
   		filter INHERIT+ and true
   		min and true
@@ -644,8 +640,8 @@ rules // partial classes / extension
   
 //  declareScopes maps declareScope(list(*), *)
 //  declareScope : (path * (string * TYPE)) * scope
-//  declareScope((_, (_, ENTITY(s))), s).
-//  declareScope((_, (_, ENTITY(s'))), s) :- s -DECLARE-> s'.
+//  declareScope((_, (_, ENTITY(_, s))), s).
+//  declareScope((_, (_, ENTITY(_, s'))), s) :- s -DECLARE-> s'.
   
 rules // props
   
