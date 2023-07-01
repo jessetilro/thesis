@@ -136,7 +136,7 @@ rules // models
     r1 == [ID2DotID(id1)],
     r2 == [ID2DotID(id2)],
     strat == stratOfStratList(str),
-    richTypeOfExp(s_e1, expr) == RICHTYPE(expr_type@ENTITY(_), expr_mult, expr_strat) | error $[expression should yield an entity type]@expr,
+    richTypeOfExp(s_e1, expr) == RICHTYPE(expr_type@ENTITY(_, _), expr_mult, expr_strat) | error $[expression should yield an entity type]@expr,
     
     try { m2 == ZERO_MORE() } | warning $[warning: multiplicity [m2] cannot be statically guaranteed]@m2_optional,
     subtype(expr_type, e2_type) | error $[type mismatch: expected [e2_type] got [expr_type]]@expr,
