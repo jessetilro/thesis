@@ -8,12 +8,12 @@ rules
   dataOk : scope * scope * Data
   
   dataOk(s, s_data, EntityInstance2Data(instance)) :-
-  	entityInstanceOk(s, s_data, instance).
+  	entityInstanceOk(s, s_data, instance) == _.
   	
-  entityInstanceOk : scope * scope * EntityInstance
+  entityInstanceOk : scope * scope * EntityInstance -> TYPE
   
-  entityInstanceOk(s_member_value, s_data, EntityInstance(name, type, member_values)) :-
-  	{ instance_name instance_type instance_richtype
+  entityInstanceOk(s_member_value, s_data, EntityInstance(name, type, member_values)) = instance_type :-
+  	{ instance_name instance_richtype
   	  s_entity_instance s_instance_props }
   	instance_name == nameOfIDSpaceList(name),
   	instance_type == typeOfEntityType(s_data, type),
@@ -22,8 +22,21 @@ rules
   	!member[instance_name, (instance_richtype, PROPS(s_instance_props))] in s_data,
   	new s_entity_instance,
   	declareThisRichtype(s_entity_instance, instance_richtype),
+  	memberValuesOk(s_entity_instance, s_data, member_values).
+  	
+  entityInstanceOk(s_member_value, s_data, EntityInstanceNoType(name, member_values)) = instance_type :-
+  	{ instance_name instance_richtype
+  	  s_entity_instance s_instance_props }
+  	instance_type == resolveMembervalueType(s_member_value),
+  	instance_name == nameOfIDSpaceList(name),
+  	instance_richtype == RICHTYPE(instance_type, ONE(), INCREMENTAL()),
+  	new s_instance_props,
+  	!member[instance_name, (instance_richtype, PROPS(s_instance_props))] in s_data,
+  	new s_entity_instance,
+  	declareThisRichtype(s_entity_instance, instance_richtype),
   	memberValuesOk(s_entity_instance, s_data, member_values)
   	.
+  
   	
   memberValuesOk maps memberValueOk(*, *, list(*))
   memberValueOk: scope * scope * MemberValue
@@ -39,13 +52,25 @@ rules
   	declareMembervalueType(s_member_value, member_type),
   	valuesOk(s_member_value, s_data, member_type, values).
   	
-  valuesOk : scope * scope * TYPE * list(Value)
-  valuesOk(s_member_value, s_data, member_type, [v | vs]) :- { v_type }
-  	v_type == typeOfValue(v),
-  	subtype(v_type, member_type) | error $[type error: expected [member_type] but got [v_type]]@v,
-  	valuesOk(s_member_value, s_data, member_type, vs).
-  valuesOk(s_member_value, s_data, member_type, []).
+  valuesOk maps valueOk(*, *, *, list(*))
+  valueOk : scope * scope * TYPE * Value
+  valueOk(s_member_value, s_data, member_type, v) :- { v_type }
+  	v_type == typeOfValue(s_member_value, s_data, member_type, v),
+  	@v.type := v_type.
+//  	subtype(v_type, member_type) | error $[type error: expected [member_type] but got [v_type]]@v.
   	
-  typeOfValue : Value -> TYPE
-  typeOfValue(LitVal(litval)) = typeOfLitVal(litval).
-  
+  typeOfValue : scope * scope * TYPE * Value -> TYPE
+  typeOfValue(_, _, _, LitVal(litval)) = t :-
+  	RICHTYPE(t, _, _) == richTypeOfLitVal(litval).
+//  typeOfValue(s_member_value, s_data, member_type, EntityInstanceValue2Value(eiv)) = t :-
+//  	t == typeOfEntityInstanceValue(s_member_value, s_data, member_type, eiv).
+//  typeOfValue(s_member_value, s_data, member_type, EntityInstanceWrapper(relation_instance, entity_instance_value)) = x :- { ri_type eiv_type }
+//  	// do something with relation instance
+//  	eiv_type == typeOfEntityInstanceValue(s_member_value, s_data, member_type, entity_instance_value).
+  	
+  typeOfEntityInstanceValue : scope * scope * TYPE * EntityInstanceValue -> TYPE
+  typeOfEntityInstanceValue(s_member_value, s_data, member_type, EntityInstanceRef(eir)) = t :-
+  	(_, RICHTYPE(t, _, _)) == resolveMember(s_member_value, eir).
+  typeOfEntityInstanceValue(s_member_value, s_data, member_type, EntityInstance2EntityInstanceValue(ei)) = t :-
+  	t == entityInstanceOk(s_member_value, s_data, ei).
+  	

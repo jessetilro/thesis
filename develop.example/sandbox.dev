@@ -1,8 +1,9 @@
 module test
   model
 entity Node {
-	x : String
+	
     name : String = concat(this.a.name) <+ ""
+    y : Boolean
   }
   relation Edge{
     Node.in *  -> in
@@ -13,5 +14,5 @@ entity Node {
 data
 
   test : Node {
-  	x = "test"
+  	y = true
   }

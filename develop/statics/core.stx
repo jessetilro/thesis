@@ -575,7 +575,7 @@ rules // name resolution
   declareMembervalueType : scope * TYPE
   declareMembervalueType(s, t) :- { s_props }
   	new s_props,
-  	!implicit["membervalue", (RICHTYPE(t, NONE(), NONE()), PROPS(s_props))] in s.
+  	!implicit["membervalue", (RICHTYPE(t, ONE(), INCREMENTAL()), PROPS(s_props))] in s.
   
   resolveMembervalueType : scope -> TYPE
   resolveMembervalueType(s) = t :-
