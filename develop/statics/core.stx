@@ -27,16 +27,8 @@ signature
       EXTEND
 //      DECLARE
   
-rules // multiplicity/ordering lattice
+rules // syntax
 
-  //                 TZeroOrMore()
-  //                  /    \
-  // ZeroOrMoreOrdered()  TOneOrMore()
-  //             /    \    /
-  //  TZeroOrOne()  TOneOrMoreOrdered()
-  //             \    /
-  //             TOne()
-  
   nameOfSpaceArrowIDList : list(SpaceArrowID) -> ID
   nameOfSpaceArrowIDList([x]) = nameOfSpaceArrowID(x).
   nameOfSpaceArrowIDList([]) = "".
@@ -48,6 +40,16 @@ rules // multiplicity/ordering lattice
   nameOfDotIDList([]) = "".
   nameOfDotID : DotID -> ID
   nameOfDotID(ID2DotID(x)) = x.
+  
+rules // multiplicity/ordering lattice
+
+  //                 TZeroOrMore()
+  //                  /    \
+  // ZeroOrMoreOrdered()  TOneOrMore()
+  //             /    \    /
+  //  TZeroOrOne()  TOneOrMoreOrdered()
+  //             \    /
+  //             TOne()
   
   multOfMultList : list(Multiplicity) -> MULT
   
@@ -486,6 +488,13 @@ rules // name resolution
       filter PARENT* and { x' :- x' == ref_id }
         min and true
         in s |-> [(_, (decl_id, type))].
+       
+  nameOfEntityType : TYPE -> ID
+  nameOfEntityType(ENTITY(s)) = id :-
+    query entity
+      filter PARENT* and true
+        min and true
+        in s |-> [(_, (id, _)) | _].
         
   resolveEntityExtensions : scope * ID -> list((path * (string * scope)))
      
@@ -502,6 +511,14 @@ rules // name resolution
       filter PARENT* EXTEND? INHERIT* EXTEND? and { x' :- x' == ref_id }
         min $ < EXTEND, EXTEND < INHERIT and true
         in s |-> [(_, (decl_id, (richtype, _)))|_].
+       
+  resolveMemberWithProps : scope * ID -> (RICHTYPE * PROPS) 
+      
+  resolveMemberWithProps(s, ref_id) = (richtype, props) :-
+    query member
+      filter PARENT* EXTEND? INHERIT* EXTEND? and { x' :- x' == ref_id }
+        min $ < EXTEND, EXTEND < INHERIT and true
+        in s |-> [(_, (_, (richtype, props)))|_].
         
   assertMemberDeclarationUnique : scope * ID
   assertMemberDeclarationUnique(s, id) :-
@@ -614,6 +631,10 @@ rules // props
   setPropStrat: scope * string * STRAT
   setPropStrat(s, key, strat) :-
     !prop[key, PROPVAL_STRAT(strat)] in s.
+   
+  setPropMult: scope * string * MULT
+  setPropMult(s, key, mult) :-
+    !prop[key, PROPVAL_MULT(mult)] in s.
     
   setPropRichtypes: scope * string * list(RICHTYPE)
   setPropRichtypes(s, key, richtypes) :-

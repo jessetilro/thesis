@@ -299,6 +299,7 @@ rules // models
 	
 	// declare relation member
 	new s_props_this,
+	setPropMult(s_props_this, "inverse_mult", inverse_mult),
     !member[role_name, (RICHTYPE(entity_type, ONE(), INCREMENTAL()), PROPS(s_props_this))] in s,
 	
 	// declare entity member
@@ -309,6 +310,42 @@ rules // models
     
     new s_props_entity,
     !member[inverse_name, (RICHTYPE(this_type, inverse_mult, INCREMENTAL()), PROPS(s_props_entity))] in s_entity_extension.
+    
+    
+  memberOk(s_root, s, Shortcut(role1, shortcut1, role2, shortcut2)) :-
+  	{ role1_type role1_mult role1_strat s_role1 role1_props role1_inverse_mult
+  	  role2_type role2_mult role2_strat s_role2 role2_props role2_inverse_mult
+  	  shortcut1_name shortcut2_name
+  	  s_role1_extension role1_name s_shortcut1_props
+  	  s_role2_extension role2_name s_shortcut2_props }
+  	// resolve references
+  	(RICHTYPE(role1_type@ENTITY(s_role1), role1_mult, role1_strat), role1_props) == resolveMemberWithProps(s, role1),
+  	PROPVAL_MULT(role1_inverse_mult) == getProp(role1_props, "inverse_mult"),
+  	shortcut1_name == nameOfDotIDList(shortcut1),
+  	(RICHTYPE(role2_type@ENTITY(s_role2), role2_mult, role2_strat), role2_props) == resolveMemberWithProps(s, role2),
+  	PROPVAL_MULT(role2_inverse_mult) == getProp(role2_props, "inverse_mult"),
+  	shortcut2_name == nameOfDotIDList(shortcut2),
+  	
+  	// declare role1 member
+  	new s_role1_extension,
+    s_role1_extension -EXTEND-> s_role1,
+    s_role1_extension -P-> s,
+    role1_name == nameOfEntityType(role1_type),
+    !entity_extension[role1_name, s_role1_extension] in s_root,
+  	
+  	new s_shortcut1_props,
+  	!member[shortcut1_name, (RICHTYPE(role2_type, role1_inverse_mult, INCREMENTAL()), PROPS(s_shortcut1_props))] in s_role1_extension,
+  	
+  	// declare role2 member
+  	new s_role2_extension,
+    s_role2_extension -EXTEND-> s_role2,
+    s_role2_extension -P-> s,
+    role2_name == nameOfEntityType(role2_type),
+    !entity_extension[role2_name, s_role2_extension] in s_root,
+  	
+  	new s_shortcut2_props,
+  	!member[shortcut2_name, (RICHTYPE(role1_type, role2_inverse_mult, INCREMENTAL()), PROPS(s_shortcut1_props))] in s_role2_extension
+  	.
 //    new s_p,
 //    setProp(s_p, "ns", "attribute"),
 //    setProp(s_p, "derivationtype", "abstract"),

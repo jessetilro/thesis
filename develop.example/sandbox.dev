@@ -1,6 +1,10 @@
 module test
   model
-
-  entity Node {
-    name : String = ""
+entity Node {
+    name : String = concat(this.a.name) <+ ""
+  }
+  relation Edge{
+    Node.in *  -> in
+    Node.out * -> out
+    in.a <-> out.b
   }
