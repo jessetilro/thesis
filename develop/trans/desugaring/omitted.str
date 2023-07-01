@@ -149,7 +149,7 @@ rules // roles -> inv (context sensitive)
       <elem>(<role-get-type>role, dupRoleTypes)
     with
       inv   := <custom-origin(|<role-get-type>role)>$[[<lcfirst>entityName]As[<role-get-name;extract-some;ucfirst>role]];
-      role' := <role-set-inv(!inv)>role
+      role' := <role-set-inv(!Some(inv))>role
     
   entity-duplicate-role-types = entity-get-members;filter(is-role);map(role-get-type);list-duplicates;make-set
 
