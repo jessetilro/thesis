@@ -43,10 +43,12 @@ rules
   
   memberValueOk(s_entity_instance, s_data, MemberValue(member_name, values)) :-
   	{ this_richtype this_type this_mult this_strat s_entity
-  	  member_richtype member_type member_mult member_strat s_member_props
+  	  member_id member_richtype member_type member_mult member_strat s_member_props
   	  s_member_value }
   	this_richtype@RICHTYPE(ENTITY(_, s_entity), this_mult, this_strat) == resolveThisRichtype(s_entity_instance),
-  	(member_richtype@RICHTYPE(member_type, member_mult, member_strat), PROPS(s_member_props)) == resolveMemberWithProps(s_entity, member_name),
+  	(member_id, member_richtype@RICHTYPE(member_type, member_mult, member_strat), PROPS(s_member_props)) == resolveMemberWithProps(s_entity, member_name),
+  	@member_name.ref := member_id,
+  	@member_name.type := member_richtype,
   	!member[member_name, (member_richtype, PROPS(s_member_props))] in s_entity_instance,
   	new s_member_value,
   	declareMembervalueType(s_member_value, member_type),
@@ -64,7 +66,7 @@ rules
   	RICHTYPE(t, _, _) == richTypeOfLitVal(litval).
   typeOfValue(s_member_value, s_data, member_type, EntityInstanceValue2Value(eiv)) = t :-
   	t == typeOfEntityInstanceValue(s_member_value, s_data, member_type, eiv).
-  typeOfValue(s_member_value, s_data, member_type, EntityInstanceWrapper(relation_instance, entity_instance_value)) = x :- { ri_type eiv_type }
+  typeOfValue(s_member_value, s_data, member_type, EntityInstanceWrapper(relation_instance, entity_instance_value)) = eiv_type :- { ri_type }
   	// do something with relation instance
   	eiv_type == typeOfEntityInstanceValue(s_member_value, s_data, member_type, entity_instance_value).
   	

@@ -320,16 +320,18 @@ rules // models
     
     
   memberOk(s_root, s, Shortcut(role1, shortcut1, role2, shortcut2)) :-
-  	{ role1_type role1_mult role1_strat s_role1 role1_props role1_inverse_mult
-  	  role2_type role2_mult role2_strat s_role2 role2_props role2_inverse_mult
+  	{ role1_id role1_type role1_mult role1_strat s_role1 role1_props role1_inverse_mult
+  	  role2_id role2_type role2_mult role2_strat s_role2 role2_props role2_inverse_mult
   	  shortcut1_name shortcut2_name
   	  s_role1_extension role1_name s_shortcut1_props
   	  s_role2_extension role2_name s_shortcut2_props }
   	// resolve references
-  	(RICHTYPE(role1_type@ENTITY(_, s_role1), role1_mult, role1_strat), role1_props) == resolveMemberWithProps(s, role1),
+  	(role1_id, RICHTYPE(role1_type@ENTITY(_, s_role1), role1_mult, role1_strat), role1_props) == resolveMemberWithProps(s, role1),
+  	@role1.ref := role1_id,
   	PROPVAL_MULT(role1_inverse_mult) == getProp(role1_props, "inverse_mult"),
   	shortcut1_name == nameOfDotIDList(shortcut1),
-  	(RICHTYPE(role2_type@ENTITY(_, s_role2), role2_mult, role2_strat), role2_props) == resolveMemberWithProps(s, role2),
+  	(role2_id, RICHTYPE(role2_type@ENTITY(_, s_role2), role2_mult, role2_strat), role2_props) == resolveMemberWithProps(s, role2),
+  	@role2.ref := role2_id,
   	PROPVAL_MULT(role2_inverse_mult) == getProp(role2_props, "inverse_mult"),
   	shortcut2_name == nameOfDotIDList(shortcut2),
   	

@@ -526,13 +526,13 @@ rules // name resolution
         min $ < EXTEND, EXTEND < INHERIT and true
         in s |-> [(_, (decl_id, (richtype, _)))|_].
        
-  resolveMemberWithProps : scope * ID -> (RICHTYPE * PROPS) 
+  resolveMemberWithProps : scope * ID -> (ID * RICHTYPE * PROPS) 
       
-  resolveMemberWithProps(s, ref_id) = (richtype, props) :-
+  resolveMemberWithProps(s, ref_id) = (decl_id, richtype, props) :-
     query member
       filter PARENT* EXTEND? INHERIT* EXTEND? and { x' :- x' == ref_id }
         min $ < EXTEND, EXTEND < INHERIT and true
-        in s |-> [(_, (_, (richtype, props)))|_].
+        in s |-> [(_, (decl_id, (richtype, props)))|_].
         
   assertMemberDeclarationUnique : scope * ID
   assertMemberDeclarationUnique(s, id) :-
