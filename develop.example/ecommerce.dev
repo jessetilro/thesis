@@ -1,0 +1,30 @@
+module example
+
+model
+
+  entity Product {
+    sku : String
+  }
+
+  relation Product.bundledProducts * <-> ? Product.bundle
+  relation Product.supplies * <-> 1 Supply.product
+  relation Product.lineItems * <-> 1 LineItem.product
+
+  entity Supply {
+    supplier : String
+    price : Float
+    inStock : Boolean
+  }
+
+  entity LineItem {
+    quantity : Int
+  }
+
+  entity Order {
+    number : String
+  }
+  
+  relation Product.inStocks * = supplies.filter(x => x.inStock) <-> ? Supply.productInStock
+  relation Product.bestSupply ? = 
+  	inStocks.find(x => x.price == (min(inStocks.price) <+ 0.0))
+  	<-> ? Supply.productAsBest

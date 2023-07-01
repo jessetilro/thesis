@@ -1,0 +1,58 @@
+module statics/example
+
+signature
+	sorts
+		Program
+		Module
+		Statement
+		Value
+		TYPE
+	constructors
+		Program : list(Module) -> Program
+		Module : string * list(Statement) -> Module
+		Import : string -> Statement
+		Member : string * Value -> Statement
+		Literal : string -> Value
+		Reference : string -> Value
+		MOD : scope -> TYPE
+	name-resolution
+		labels
+			PARENT
+			IMPORT
+	relations
+		modules : string -> TYPE
+		members : string
+rules
+	programOk : Program
+	programOk(Program(modules)) :- {s0}
+		new s0,
+		modulesOk(s0, modules).
+		
+	modulesOk maps moduleOk(*, list(*))
+  	moduleOk : scope * Module
+  	moduleOk(s0, Module(id, statements)) :- {s_mod}
+  		new s_mod,
+  		s_mod -PARENT-> s0,
+  		!modules[id, MOD(s_mod)] in s0,
+  		statementsOk(s_mod, statements).
+  		
+	statementsOk maps statementOk(*, list(*))
+	statementOk : scope * Statement
+	statementOk(s, Import(id)) :- {s_mod}
+		query modules
+	      filter PARENT* and { x' :- x' == id }
+	        min $ < PARENT and true
+	        in s |-> [(_, (_, MOD(s_mod)))],
+	    s -IMPORT-> s_mod.
+	statementOk(s, Member(id, value)) :-
+		!members[id] in s,
+		valueOk(s, value).
+		
+	valueOk : scope * Value
+	valueOk(_, Literal(_)).
+	valueOk(s, Reference(id)) :-
+		query members
+	      filter IMPORT* and { x' :- x' == id }
+	        min $ < IMPORT and true
+	        in s |-> [(_, _)].
+ 

@@ -62,11 +62,22 @@ rules // role fields
 
   role-generate-omitted =
     is-role;
-    try(role-generate-mult);
-    try(role-generate-name)
+    role-generate-mult;
+    role-generate-name
 
-  role-generate-mult = role-has-no-mult;     role-set-mult(!Some(ZeroOrMore()))
-  role-generate-name = role-has-no-name; ?r; role-set-name(!r;role-get-type;lcfirst)
+	role-generate-mult: role -> role'
+	where
+		role-has-no-mult
+	with
+		role' := <role-set-mult(!Some(ZeroOrOne()))> role
+		
+	role-generate-name: role -> role'
+	where
+		role-has-no-name
+	with
+		name := <role-get-type;lcfirst> role;
+		role' := <role-set-name(!Some(name))> role
+
 
 rules
 
@@ -130,18 +141,20 @@ rules // roles -> inv (context sensitive)
       <not(elem)>(<role-get-type>role, dupRoleTypes)
     with
       inv   := <lcfirst;custom-origin(|<role-get-type>role)>entityName;
-      role' := <role-set-inv(!inv)>role
+      role' := <role-set-inv(!Some(inv))>role
     
   generate-inverse-name(|entityName, dupRoleTypes): role -> role'
     where
       role-has-no-inv;
       <elem>(<role-get-type>role, dupRoleTypes)
     with
-      inv   := <custom-origin(|<role-get-type>role)>$[[<lcfirst>entityName]As[<role-get-name;ucfirst>role]];
+      inv   := <custom-origin(|<role-get-type>role)>$[[<lcfirst>entityName]As[<role-get-name;extract-some;ucfirst>role]];
       role' := <role-set-inv(!inv)>role
     
   entity-duplicate-role-types = entity-get-members;filter(is-role);map(role-get-type);list-duplicates;make-set
 
+	extract-some: Some(x) -> x
+	extract-some: x -> x where not(?Some)
 rules  // eiNames (context sensitive)
 
   datadef-generate-entity-names: d -> <datadef-set-data(|c'')>d
@@ -166,7 +179,7 @@ rules // shortcuts (context sensitive)
       is-entity
     with
       members       := <entity-get-members>e;
-      roles         := <filter(role-get-name);keep-origin(string-sort)>members;
+      roles         := <filter(role-get-name);filter(not(?None()));filter(keep-origin(Some(?x);!x));keep-origin(string-sort)>members;
       shortcuts     := <filter(shortcut-get-roles-ordered)>members;
       shortcuts-all := <join-half>roles;
       shortcuts-add := <diff>(shortcuts-all, shortcuts);

@@ -5,6 +5,7 @@ imports // functions
   desugaring/alternatives
   desugaring/omitted
   lib/origin
+  signatures/Types-sig
   
 rules
 

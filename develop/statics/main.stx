@@ -24,10 +24,20 @@ rules // multi-file entry points
     @m.scope := s.
     
   programOk : Start
-  programOk(m@Module(id, opt, sections)) :- { s props }
+  programOk(m@Module(id, opt, sections)) :- { s props entities }
     new s,
     sectionsOk(s, sections),
-    @m.scope := s.
+    @m.scope := s
+    
+    // each entity scope has a P edge to the root module scope
+    // below we introduce inverse edges for these P edges
+    // this way, entity_extension datums that are declared within
+    // entity scopes can be reached from other entity scopes
+//    query entity
+//    	filter e and true
+//    	in s |-> entities,
+//    declareScopes(entities, s)
+    .
   
 rules // module sections
 
@@ -55,16 +65,21 @@ rules // models
     resolveEntity(s_model, id) == (_, ENTITY(s_resolve)) | error $[duplicate definition of entity [id]]@id,
     @id.type := ENTITY(s_resolve),
     extendScopes(resolveEntityExtensions(s, id), s_model),
-    membersOk(s_model, members),
+    membersOk(s, s_model, members),
     declareInheritance(s_model, optional_parent).
     
-  modelOk(s, FirstClassRelation(id, _, _, members)) :- { s_model s_resolve } // identical to Entity
+  modelOk(s, FirstClassRelation(id, _, strat, members)) :-
+  	{ s_model s_resolve this_type this_mult this_strat } // identical to Entity
     new s_model, s_model -PARENT-> s,
     setProp(s_model, "kind", "first_class_relation"),
     declareEntity(s, id, s_model),
     resolveEntity(s_model, id) == (_, ENTITY(s_resolve)) | error $[duplicate definition of entity [id]]@id,
-    @id.type := ENTITY(s_resolve),
-    membersOk(s_model, members).
+    this_type == ENTITY(s_resolve),
+    this_mult == ONE(),
+    this_strat == stratOfStratList(strat),
+    @id.type := this_type,
+    declareThisRichtype(s_model, RICHTYPE(this_type, this_mult, this_strat)),
+    membersOk(s, s_model, members).
     
   modelOk(s, Relation(e1, r1, m1_optional, m2_optional, e2, r2)) :-
     { s_e1 s_e2 s_r1 s_r2 m1 m2 id1 id2 s_p1 s_p2 }
@@ -151,10 +166,10 @@ rules // models
     !member[id2, (RICHTYPE(ENTITY(s_e1), m2, INCREMENTAL()), PROPS(s_p2))] in s_r2,
     !entity_extension[e2, s_r2] in s.
     
-  membersOk maps memberOk(*, list(*))
-  memberOk : scope * Member
+  membersOk maps memberOk(*, *, list(*))
+  memberOk : scope * scope * Member
   
-  memberOk(s, DerivationAttribute(id, type, mult, exp, [Inline()])) :-
+  memberOk(_, s, DerivationAttribute(id, type, mult, exp, [Inline()])) :-
   { declared decl_richtype e_type e_mult e_strat d_type d_mult d_strat s_p }
     RICHTYPE(e_type, e_mult, e_strat) == richTypeOfExp(s, exp),
 
@@ -175,11 +190,12 @@ rules // models
     setProp(s_p, "inlining", "inline"),
     
     !member[id, (RICHTYPE(d_type, d_mult, d_strat), PROPS(s_p))] in s,
+    assertMemberDeclarationUnique(s, id),
     
     @id.type := RICHTYPE(d_type, d_mult, d_strat),
     @exp.type := RICHTYPE(e_type, e_mult, e_strat).
   
-  memberOk(s, DerivationAttribute(id, type, mult, exp, strat)) :-
+  memberOk(_, s, DerivationAttribute(id, type, mult, exp, strat)) :-
   { declared decl_richtype e_type e_mult e_strat d_type d_mult d_strat rid s_p }
     RICHTYPE(e_type, e_mult, e_strat) == richTypeOfExp(s, exp),
 
@@ -201,11 +217,12 @@ rules // models
     setProp(s_p, "inlining", "not_inline"),
     
     !member[id, (RICHTYPE(d_type, d_mult, d_strat), PROPS(s_p))] in s,
+    assertMemberDeclarationUnique(s, id),
     
     @id.type := RICHTYPE(d_type, d_mult, d_strat),
     @exp.type := RICHTYPE(e_type, e_mult, e_strat).
     
-  memberOk(s, DefaultAttribute(id, type, mult, exp, strat)) :-
+  memberOk(_, s, DefaultAttribute(id, type, mult, exp, strat)) :-
   { declared decl_richtype e_type e_mult e_strat d_type d_mult d_strat rid s_p }
     RICHTYPE(e_type, e_mult, e_strat) == richTypeOfExp(s, exp),
 
@@ -227,11 +244,12 @@ rules // models
     setProp(s_p, "inlining", "not_inline"),
     
     !member[id, (RICHTYPE(d_type, d_mult, d_strat), PROPS(s_p))] in s,
+    assertMemberDeclarationUnique(s, id),
     
     @id.type := RICHTYPE(d_type, d_mult, d_strat),
     @exp.type := RICHTYPE(e_type, e_mult, e_strat).
     
-  memberOk(s, Attribute(id, type, mult)) :-
+  memberOk(_, s, Attribute(id, type, mult)) :-
   { declared decl_richtype e_type e_mult e_strat d_type d_mult d_strat rid s_p }
     d_type == typeOfPrimitiveType(type),
     d_mult == multOfMultList(mult),
@@ -241,9 +259,11 @@ rules // models
     setProp(s_p, "inlining", "not_inline"),
     
     !member[id, (RICHTYPE(d_type, d_mult, d_strat), PROPS(s_p))] in s,
+    assertMemberDeclarationUnique(s, id),
+    
     @id.type := RICHTYPE(d_type, d_mult, d_strat).
   
-  memberOk(s, AbstractAttribute(id, type, mult, strat)) :-
+  memberOk(_, s, AbstractAttribute(id, type, mult, strat)) :-
   { declared decl_richtype d_type d_mult d_strat rid s_p }
 
     d_type == typeOfPrimitiveType(type),
@@ -259,8 +279,91 @@ rules // models
     setProp(s_p, "inlining", "not_inline"),
     
     !member[id, (RICHTYPE(d_type, d_mult, d_strat), PROPS(s_p))] in s,
+    assertMemberDeclarationUnique(s, id),
     
     @id.type := RICHTYPE(d_type, d_mult, d_strat).
     
-  // TODO: check overriding for attribute declarations
+  memberOk(s_root, s, Role(entity, inverse, mult, role)) :-
+  { s_entity entity_type entity_name
+  	inverse_name inverse_mult
+  	this_richtype this_type this_mult this_strat
+  	role_name
+  	s_entity_extension
+  	s_props_this s_props_entity }
+  	// resolve references
+	(entity_name, entity_type@ENTITY(s_entity)) == resolveEntity(s, entity) | error $[entity [entity] is not declared],
+	inverse_name == nameOfDotIDList(inverse),
+    inverse_mult == multOfSpaceMultList(mult),
+	this_richtype@RICHTYPE(this_type, this_mult, this_strat) == resolveThisRichtype(s),
+	role_name == nameOfSpaceArrowIDList(role),
+	
+	// declare relation member
+	new s_props_this,
+    !member[role_name, (RICHTYPE(entity_type, ONE(), INCREMENTAL()), PROPS(s_props_this))] in s,
+	
+	// declare entity member
+	new s_entity_extension,
+    s_entity_extension -EXTEND-> s_entity,
+    s_entity_extension -P-> s,
+    !entity_extension[entity_name, s_entity_extension] in s_root,
+    
+    new s_props_entity,
+    !member[inverse_name, (RICHTYPE(this_type, inverse_mult, INCREMENTAL()), PROPS(s_props_entity))] in s_entity_extension.
+//    new s_p,
+//    setProp(s_p, "ns", "attribute"),
+//    setProp(s_p, "derivationtype", "abstract"),
+//    setProp(s_p, "reltype", "none"),
+//    setProp(s_p, "side", "none"),
+//    setPropStrat(s_p, "calculationstrategy", d_strat),
+//    setProp(s_p, "inlining", "not_inline"),
+//    
+//    !member[id, (RICHTYPE(d_type, d_mult, d_strat), PROPS(s_p))] in s,
+//    assertMemberDeclarationUnique(s, id),
+//    
+//    @id.type := RICHTYPE(d_type, d_mult, d_strat)
+//    
+//    (_, e1_type@ENTITY(s_e1)) == resolveEntity(s, e1) | error $[entity [e1] is not declared],
+//    (_, e2_type@ENTITY(s_e2)) == resolveEntity(s, e2) | error $[entity [e2] is not declared],
+//    m1 == multOfSpaceMultList(m1_optional),
+//    m2 == multOfSpaceMultList(m2_optional),
+//    r1 == [ID2DotID(id1)],
+//    r2 == [ID2DotID(id2)],
+//    strat == stratOfStratList(str),
+//    richTypeOfExp(s_e1, expr) == RICHTYPE(expr_type@ENTITY(_), expr_mult, expr_strat) | error $[expression should yield an entity type]@expr,
+//    
+//    try { m2 == ZERO_MORE() } | warning $[warning: multiplicity [m2] cannot be statically guaranteed]@m2_optional,
+//    subtype(expr_type, e2_type) | error $[type mismatch: expected [e2_type] got [expr_type]]@expr,
+//    mult(expr_mult, m1) | error $[multiplicity mismatch: expected [m1] got [expr_mult]]@expr,
+//    strat(expr_strat, strat) | error $[strategy mismatch: expected [strat] got [expr_strat]]@expr,    
+//    
+//    new s_r1,
+//    s_r1 -EXTEND-> s_e1,
+//    s_r1 -P-> s,
+//    
+//    new s_r2,
+//    s_r2 -EXTEND-> s_e2,
+//    s_r2 -P-> s,
+//    
+//    new s_p1,
+//    setProp(s_p1, "ns", "relation"),
+//    setProp(s_p1, "inverse", id2),
+//    setProp(s_p1, "side", "left"),
+//    setProp(s_p1, "reltype", "none"),
+//    setProp(s_p1, "derivationtype", "derivation"),
+//    setPropStrat(s_p1, "calculationstrategy", strat),
+//    
+//    new s_p2,
+//    setProp(s_p2, "ns", "relation"),
+//    setProp(s_p2, "inverse", id1),
+//    setProp(s_p2, "side", "right"),
+//    setProp(s_p2, "reltype", "none"),
+//    setProp(s_p2, "derivationtype", "normal"),
+//    setPropStrat(s_p2, "calculationstrategy", strat),
+//    
+//    !member[id1, (RICHTYPE(ENTITY(s_e2), m1, INCREMENTAL()), PROPS(s_p1))] in s_r1,
+//    !entity_extension[e1, s_r1] in s,
+//    
+//    !member[id2, (RICHTYPE(ENTITY(s_e1), m2, INCREMENTAL()), PROPS(s_p2))] in s_r2,
+//    !entity_extension[e2, s_r2] in s.
+    
   

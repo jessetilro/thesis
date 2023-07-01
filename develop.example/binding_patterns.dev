@@ -1,0 +1,12 @@
+module binding_patterns
+
+
+model
+
+  entity Primary {
+  }
+  entity Secondary {
+  }
+  entity Sub extends Primary {
+  }
+  relation Primary.secondary 1 <-> 1 Secondary.primary

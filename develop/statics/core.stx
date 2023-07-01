@@ -10,6 +10,7 @@ signature
     entity_extension : ID * scope
     member : ID -> (RICHTYPE * PROPS)
     function : ID -> (RICHTYPE * PROPS)
+    implicit : string -> (RICHTYPE * PROPS)
     prop : string -> PROPVAL
     
   name-resolution
@@ -24,6 +25,7 @@ signature
       PARENT
       INHERIT
       EXTEND
+//      DECLARE
   
 rules // multiplicity/ordering lattice
 
@@ -34,6 +36,18 @@ rules // multiplicity/ordering lattice
   //  TZeroOrOne()  TOneOrMoreOrdered()
   //             \    /
   //             TOne()
+  
+  nameOfSpaceArrowIDList : list(SpaceArrowID) -> ID
+  nameOfSpaceArrowIDList([x]) = nameOfSpaceArrowID(x).
+  nameOfSpaceArrowIDList([]) = "".
+  nameOfSpaceArrowID : SpaceArrowID -> ID
+  nameOfSpaceArrowID(ID2SpaceArrowID(x)) = x.
+  
+  nameOfDotIDList : list(DotID) -> ID
+  nameOfDotIDList([x]) = nameOfDotID(x).
+  nameOfDotIDList([]) = "".
+  nameOfDotID : DotID -> ID
+  nameOfDotID(ID2DotID(x)) = x.
   
   multOfMultList : list(Multiplicity) -> MULT
   
@@ -87,43 +101,46 @@ rules // multiplicity/ordering lattice
   
   multLub : MULT * MULT -> MULT
   
+  multLub(X, X) = X.
+  multLub(X, Y) = multLub(Y, X).
+  
   // identity
-  multLub(ONE(), ONE()) = ONE().
-  multLub(ZERO_ONE(), ZERO_ONE()) = ZERO_ONE().
-  multLub(ONE_MORE_ORD(), ONE_MORE_ORD()) = ONE_MORE_ORD().
-  multLub(ZERO_MORE_ORD(), ZERO_MORE_ORD()) = ZERO_MORE_ORD().
-  multLub(ONE_MORE(), ONE_MORE()) = ONE_MORE().
-  multLub(ZERO_MORE(), ZERO_MORE()) = ZERO_MORE().
+//  multLub(ONE(), ONE()) = ONE().
+//  multLub(ZERO_ONE(), ZERO_ONE()) = ZERO_ONE().
+//  multLub(ONE_MORE_ORD(), ONE_MORE_ORD()) = ONE_MORE_ORD().
+//  multLub(ZERO_MORE_ORD(), ZERO_MORE_ORD()) = ZERO_MORE_ORD().
+//  multLub(ONE_MORE(), ONE_MORE()) = ONE_MORE().
+//  multLub(ZERO_MORE(), ZERO_MORE()) = ZERO_MORE().
   
   // root + descendants
   multLub(ZERO_MORE(), _) = ZERO_MORE().
-  multLub(_, ZERO_MORE()) = ZERO_MORE().
+//  multLub(_, ZERO_MORE()) = ZERO_MORE().
   multLub(ZERO_MORE_ORD(), ONE_MORE()) = ZERO_MORE().
-  multLub(ONE_MORE(), ZERO_MORE_ORD()) = ZERO_MORE().
+//  multLub(ONE_MORE(), ZERO_MORE_ORD()) = ZERO_MORE().
   
   // zero_more_ord + descendants
   multLub(ZERO_MORE_ORD(), ZERO_ONE()) = ZERO_MORE_ORD().
-  multLub(ZERO_ONE(), ZERO_MORE_ORD()) = ZERO_MORE_ORD().
+//  multLub(ZERO_ONE(), ZERO_MORE_ORD()) = ZERO_MORE_ORD().
   multLub(ZERO_MORE_ORD(), ONE_MORE_ORD()) = ZERO_MORE_ORD().
-  multLub(ONE_MORE_ORD(), ZERO_MORE_ORD()) = ZERO_MORE_ORD().
+//  multLub(ONE_MORE_ORD(), ZERO_MORE_ORD()) = ZERO_MORE_ORD().
   multLub(ZERO_MORE_ORD(), ONE()) = ZERO_MORE_ORD().
-  multLub(ONE(), ZERO_MORE_ORD()) = ZERO_MORE_ORD().
+//  multLub(ONE(), ZERO_MORE_ORD()) = ZERO_MORE_ORD().
   
   // one_more + descendants
   multLub(ONE_MORE(), ZERO_ONE()) = ONE_MORE().
-  multLub(ZERO_ONE(), ONE_MORE()) = ONE_MORE().
+//  multLub(ZERO_ONE(), ONE_MORE()) = ONE_MORE().
   multLub(ONE_MORE(), ONE_MORE_ORD()) = ONE_MORE().
-  multLub(ONE_MORE_ORD(), ONE_MORE()) = ONE_MORE().
+//  multLub(ONE_MORE_ORD(), ONE_MORE()) = ONE_MORE().
   multLub(ONE_MORE(), ONE()) = ONE_MORE().
-  multLub(ONE(), ONE_MORE()) = ONE_MORE().
+//  multLub(ONE(), ONE_MORE()) = ONE_MORE().
   
   // zero_one + descendant
   multLub(ONE(), ZERO_ONE()) = ZERO_ONE().
-  multLub(ZERO_ONE(), ONE()) = ZERO_ONE().
+//  multLub(ZERO_ONE(), ONE()) = ZERO_ONE().
   
   // one_more_ord + descendant
   multLub(ONE(), ONE_MORE_ORD()) = ONE_MORE_ORD().
-  multLub(ONE_MORE_ORD(), ONE()) = ONE_MORE_ORD().
+//  multLub(ONE_MORE_ORD(), ONE()) = ONE_MORE_ORD().
   
   zeroness : Exp -> ZERONESS
   
@@ -482,10 +499,17 @@ rules // name resolution
       
   resolveMember(s, ref_id) = (decl_id, richtype) :-
     query member
-      filter PARENT* EXTEND? (INHERIT|EXTEND)* and { x' :- x' == ref_id }
-        min $ < INHERIT and true
+      filter PARENT* EXTEND? INHERIT* EXTEND? and { x' :- x' == ref_id }
+        min $ < EXTEND, EXTEND < INHERIT and true
         in s |-> [(_, (decl_id, (richtype, _)))|_].
         
+  assertMemberDeclarationUnique : scope * ID
+  assertMemberDeclarationUnique(s, id) :-
+  	query member
+      filter e and { x' :- x' == id }
+        in s |-> [_]
+        | error $[duplicate declaration of member [id]]@id.
+  
   declareFunction : scope * ID * RICHTYPE * PROPS
   
   declareFunction(s, id, richtype, props) :-
@@ -499,9 +523,19 @@ rules // name resolution
         min and true
         in s |-> [(_, (decl_id, (richtype, props)))].
         
-  resolveThis : scope -> TYPE
-        
-  resolveThis(s) = ENTITY(s). // todo actually declare "this" and resolve it
+  resolveThisType : scope -> TYPE
+  resolveThisType(s) = ENTITY(s). // todo actually declare "this" and resolve it
+  
+  declareThisRichtype : scope * RICHTYPE
+  declareThisRichtype(s, richtype) :- { s_props }
+  	new s_props,
+  	!implicit["this", (richtype, PROPS(s_props))] in s.
+  
+  resolveThisRichtype : scope -> RICHTYPE
+  resolveThisRichtype(s) = richtype :-
+    query implicit
+      filter e and { x' :- x' == "this" }
+        in s |-> [(_, (_, (richtype, _)))|_].
   
   declareInheritance : scope * list(OptionalExtends)
   
@@ -559,8 +593,13 @@ rules // partial classes / extension
   
   extendScopes maps extendScope(list(*), *)
   extendScope : (path * (string * scope)) * scope
-  extendScope((_, (_, s)), s). // extension is not reflexive
+  extendScope((_, (_, s)), s).
   extendScope((_, (_, s')), s) :- s -EXTEND-> s'.
+  
+//  declareScopes maps declareScope(list(*), *)
+//  declareScope : (path * (string * TYPE)) * scope
+//  declareScope((_, (_, ENTITY(s))), s).
+//  declareScope((_, (_, ENTITY(s'))), s) :- s -DECLARE-> s'.
   
 rules // props
   

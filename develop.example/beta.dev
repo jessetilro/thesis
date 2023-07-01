@@ -7,11 +7,13 @@ model
   }
 
   entity X extends Super {
-    xnum : Int = (y.ynum <+ 0) + super
+    xnum : Int = (y.one <+ 0) + super
   }
   
   entity Y {
-    ynum : Int = 0
+    zeroOrMore : Int * = one
+    one : Int = 1 + maybeOne
+    maybeOne : Int ?
   }
   
   relation X.y ? <-> 1 Y.x

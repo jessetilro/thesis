@@ -22,3 +22,10 @@ rules // Debugging
     with
       filename := <guarantee-extension(|"aterm")> path
     ; result   := <desugar-before-analysis>node
+    
+  debug-strategy:
+    (node, _, _, path, project-path) -> (filename, result)
+    with
+      	filename := <guarantee-extension(|"aterm")> path;
+      	
+		result   := <filter(not(?None()));string-sort>["b", None(), "a"]

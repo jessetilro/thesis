@@ -1,0 +1,6 @@
+module product
+model
+	entity Product {}
+	entity Category {}
+	
+	relation Product.category 1 <-> * Category.products 
