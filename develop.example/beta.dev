@@ -12,7 +12,7 @@ model
   
   entity Y {
     zeroOrMore : Int * = one
-    one : Int = 1 + maybeOne
+    one : Int = 1 + maybeOne <+ 1
     maybeOne : Int ?
   }
   

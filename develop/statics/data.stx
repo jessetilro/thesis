@@ -56,17 +56,17 @@ rules
   valueOk : scope * scope * TYPE * Value
   valueOk(s_member_value, s_data, member_type, v) :- { v_type }
   	v_type == typeOfValue(s_member_value, s_data, member_type, v),
-  	@v.type := v_type.
-//  	subtype(v_type, member_type) | error $[type error: expected [member_type] but got [v_type]]@v.
+  	@v.type := v_type,
+  	subtype(v_type, member_type) | error $[type error: expected [member_type] but got [v_type]]@v.
   	
   typeOfValue : scope * scope * TYPE * Value -> TYPE
   typeOfValue(_, _, _, LitVal(litval)) = t :-
   	RICHTYPE(t, _, _) == richTypeOfLitVal(litval).
-//  typeOfValue(s_member_value, s_data, member_type, EntityInstanceValue2Value(eiv)) = t :-
-//  	t == typeOfEntityInstanceValue(s_member_value, s_data, member_type, eiv).
-//  typeOfValue(s_member_value, s_data, member_type, EntityInstanceWrapper(relation_instance, entity_instance_value)) = x :- { ri_type eiv_type }
-//  	// do something with relation instance
-//  	eiv_type == typeOfEntityInstanceValue(s_member_value, s_data, member_type, entity_instance_value).
+  typeOfValue(s_member_value, s_data, member_type, EntityInstanceValue2Value(eiv)) = t :-
+  	t == typeOfEntityInstanceValue(s_member_value, s_data, member_type, eiv).
+  typeOfValue(s_member_value, s_data, member_type, EntityInstanceWrapper(relation_instance, entity_instance_value)) = x :- { ri_type eiv_type }
+  	// do something with relation instance
+  	eiv_type == typeOfEntityInstanceValue(s_member_value, s_data, member_type, entity_instance_value).
   	
   typeOfEntityInstanceValue : scope * scope * TYPE * EntityInstanceValue -> TYPE
   typeOfEntityInstanceValue(s_member_value, s_data, member_type, EntityInstanceRef(eir)) = t :-
