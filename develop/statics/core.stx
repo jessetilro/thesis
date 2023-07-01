@@ -41,6 +41,12 @@ rules // syntax
   nameOfDotID : DotID -> ID
   nameOfDotID(ID2DotID(x)) = x.
   
+  nameOfIDSpaceList : list(IDSpace) -> ID
+  nameOfIDSpaceList([x]) = ameOfIDSpace(x).
+  nameOfIDSpaceList([]) = "".
+  ameOfIDSpace : IDSpace -> ID
+  ameOfIDSpace(ID2IDSpace(x)) = x.
+  
 rules // multiplicity/ordering lattice
 
   //                 TZeroOrMore()
@@ -473,6 +479,18 @@ rules // type checking
   
   typeOfEntityType(s, EntityType(id)) = type :-
   	(_, type) == resolveEntity(s, id).
+  	
+  richTypeOfLitVal : LitVal -> RICHTYPE
+  richTypeOfLitVal(Int(_)) = RICHTYPE(INT(), ONE(), INCREMENTAL()).
+  richTypeOfLitVal(Float(_)) = RICHTYPE(FLOAT(), ONE(), INCREMENTAL()).
+  richTypeOfLitVal(True()) = RICHTYPE(BOOLEAN(), ONE(), INCREMENTAL()).
+  richTypeOfLitVal(False()) = RICHTYPE(BOOLEAN(), ONE(), INCREMENTAL()).
+  richTypeOfLitVal(String(_)) = RICHTYPE(STRING(), ONE(), INCREMENTAL()).
+  richTypeOfLitVal(NoValue()) = RICHTYPE(NOVALUE(), ONE(), INCREMENTAL()).
+  
+  typeOfLitVal : LitVal -> TYPE
+  typeOfLitVal(litval) = t :-
+  	RICHTYPE(t, _, _) == richTypeOfLitVal(litval). 
     
 rules // name resolution
 
@@ -553,6 +571,17 @@ rules // name resolution
     query implicit
       filter e and { x' :- x' == "this" }
         in s |-> [(_, (_, (richtype, _)))|_].
+        
+  declareMembervalueType : scope * TYPE
+  declareMembervalueType(s, t) :- { s_props }
+  	new s_props,
+  	!implicit["membervalue", (RICHTYPE(t, NONE(), NONE()), PROPS(s_props))] in s.
+  
+  resolveMembervalueType : scope -> TYPE
+  resolveMembervalueType(s) = t :-
+    query implicit
+      filter e and { x' :- x' == "membervalue" }
+        in s |-> [(_, (_, (RICHTYPE(t, _, _), _)))|_].
   
   declareInheritance : scope * list(OptionalExtends)
   

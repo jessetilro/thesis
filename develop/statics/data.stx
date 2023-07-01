@@ -4,4 +4,48 @@ imports statics/core
 
 rules
 
-	
+  datasOk maps dataOk(*, *, list(*))
+  dataOk : scope * scope * Data
+  
+  dataOk(s, s_data, EntityInstance2Data(instance)) :-
+  	entityInstanceOk(s, s_data, instance).
+  	
+  entityInstanceOk : scope * scope * EntityInstance
+  
+  entityInstanceOk(s_member_value, s_data, EntityInstance(name, type, member_values)) :-
+  	{ instance_name instance_type instance_richtype
+  	  s_entity_instance s_instance_props }
+  	instance_name == nameOfIDSpaceList(name),
+  	instance_type == typeOfEntityType(s_data, type),
+  	instance_richtype == RICHTYPE(instance_type, ONE(), INCREMENTAL()),
+  	new s_instance_props,
+  	!member[instance_name, (instance_richtype, PROPS(s_instance_props))] in s_data,
+  	new s_entity_instance,
+  	declareThisRichtype(s_entity_instance, instance_richtype),
+  	memberValuesOk(s_entity_instance, s_data, member_values)
+  	.
+  	
+  memberValuesOk maps memberValueOk(*, *, list(*))
+  memberValueOk: scope * scope * MemberValue
+  
+  memberValueOk(s_entity_instance, s_data, MemberValue(member_name, values)) :-
+  	{ this_richtype this_type this_mult this_strat s_entity
+  	  member_richtype member_type member_mult member_strat s_member_props
+  	  s_member_value }
+  	this_richtype@RICHTYPE(ENTITY(s_entity), this_mult, this_strat) == resolveThisRichtype(s_entity_instance),
+  	(member_richtype@RICHTYPE(member_type, member_mult, member_strat), PROPS(s_member_props)) == resolveMemberWithProps(s_entity, member_name),
+  	!member[member_name, (member_richtype, PROPS(s_member_props))] in s_entity_instance,
+  	new s_member_value,
+  	declareMembervalueType(s_member_value, member_type),
+  	valuesOk(s_member_value, s_data, member_type, values).
+  	
+  valuesOk : scope * scope * TYPE * list(Value)
+  valuesOk(s_member_value, s_data, member_type, [v | vs]) :- { v_type }
+  	v_type == typeOfValue(v),
+  	subtype(v_type, member_type) | error $[type error: expected [member_type] but got [v_type]]@v,
+  	valuesOk(s_member_value, s_data, member_type, vs).
+  valuesOk(s_member_value, s_data, member_type, []).
+  	
+  typeOfValue : Value -> TYPE
+  typeOfValue(LitVal(litval)) = typeOfLitVal(litval).
+  

@@ -12,6 +12,7 @@ imports statics/expressions/references
 imports statics/expressions/functions
 imports statics/expressions/collections
 imports statics/functions
+imports statics/data
 
 rules // multi-file entry points
 
@@ -19,14 +20,18 @@ rules // multi-file entry points
   projectOk(s).
   
   fileOk : scope * Start
-  fileOk(s, m@Module(id, opt, sections)) :-
-    sectionsOk(s, sections),
+  fileOk(s, m@Module(id, opt, sections)) :- { s_data }
+  	new s_data,
+  	s_data -PARENT-> s,
+    sectionsOk(s, s_data, sections),
     @m.scope := s.
     
   programOk : Start
-  programOk(m@Module(id, opt, sections)) :- { s props entities }
+  programOk(m@Module(id, opt, sections)) :- { s s_data }
     new s,
-    sectionsOk(s, sections),
+    new s_data,
+  	s_data -PARENT-> s,
+    sectionsOk(s, s_data, sections),
     @m.scope := s
     
     // each entity scope has a P edge to the root module scope
@@ -41,16 +46,18 @@ rules // multi-file entry points
   
 rules // module sections
 
-  sectionsOk maps sectionOk(*, list(*))
-  sectionOk : scope * ModuleSection
+  sectionsOk maps sectionOk(*, *, list(*))
+  sectionOk : scope * scope * ModuleSection
   
-  sectionOk(s, ConfigSection(_)).
-  sectionOk(s, ModelSection(models)) :-
+  sectionOk(s, s_data, ConfigSection(_)).
+  sectionOk(s, s_data, ModelSection(models)) :-
     modelsOk(s, models).
-  sectionOk(s, FunctionSection(functions)) :-
+  sectionOk(s, s_data, FunctionSection(functions)) :-
   	functionsOk(s, functions).
-  sectionOk(s, DataSection(_)).
-  sectionOk(s, ExecuteSection(_)).
+  sectionOk(s, s_data, DataSection(datas)) :- { s_empty }
+ 	new s_empty,
+  	datasOk(s_empty, s_data, datas).
+  sectionOk(s, s_data, ExecuteSection(_)).
   
 rules // models
   
@@ -344,63 +351,4 @@ rules // models
     !entity_extension[role2_name, s_role2_extension] in s_root,
   	
   	new s_shortcut2_props,
-  	!member[shortcut2_name, (RICHTYPE(role1_type, role2_inverse_mult, INCREMENTAL()), PROPS(s_shortcut1_props))] in s_role2_extension
-  	.
-//    new s_p,
-//    setProp(s_p, "ns", "attribute"),
-//    setProp(s_p, "derivationtype", "abstract"),
-//    setProp(s_p, "reltype", "none"),
-//    setProp(s_p, "side", "none"),
-//    setPropStrat(s_p, "calculationstrategy", d_strat),
-//    setProp(s_p, "inlining", "not_inline"),
-//    
-//    !member[id, (RICHTYPE(d_type, d_mult, d_strat), PROPS(s_p))] in s,
-//    assertMemberDeclarationUnique(s, id),
-//    
-//    @id.type := RICHTYPE(d_type, d_mult, d_strat)
-//    
-//    (_, e1_type@ENTITY(s_e1)) == resolveEntity(s, e1) | error $[entity [e1] is not declared],
-//    (_, e2_type@ENTITY(s_e2)) == resolveEntity(s, e2) | error $[entity [e2] is not declared],
-//    m1 == multOfSpaceMultList(m1_optional),
-//    m2 == multOfSpaceMultList(m2_optional),
-//    r1 == [ID2DotID(id1)],
-//    r2 == [ID2DotID(id2)],
-//    strat == stratOfStratList(str),
-//    richTypeOfExp(s_e1, expr) == RICHTYPE(expr_type@ENTITY(_), expr_mult, expr_strat) | error $[expression should yield an entity type]@expr,
-//    
-//    try { m2 == ZERO_MORE() } | warning $[warning: multiplicity [m2] cannot be statically guaranteed]@m2_optional,
-//    subtype(expr_type, e2_type) | error $[type mismatch: expected [e2_type] got [expr_type]]@expr,
-//    mult(expr_mult, m1) | error $[multiplicity mismatch: expected [m1] got [expr_mult]]@expr,
-//    strat(expr_strat, strat) | error $[strategy mismatch: expected [strat] got [expr_strat]]@expr,    
-//    
-//    new s_r1,
-//    s_r1 -EXTEND-> s_e1,
-//    s_r1 -P-> s,
-//    
-//    new s_r2,
-//    s_r2 -EXTEND-> s_e2,
-//    s_r2 -P-> s,
-//    
-//    new s_p1,
-//    setProp(s_p1, "ns", "relation"),
-//    setProp(s_p1, "inverse", id2),
-//    setProp(s_p1, "side", "left"),
-//    setProp(s_p1, "reltype", "none"),
-//    setProp(s_p1, "derivationtype", "derivation"),
-//    setPropStrat(s_p1, "calculationstrategy", strat),
-//    
-//    new s_p2,
-//    setProp(s_p2, "ns", "relation"),
-//    setProp(s_p2, "inverse", id1),
-//    setProp(s_p2, "side", "right"),
-//    setProp(s_p2, "reltype", "none"),
-//    setProp(s_p2, "derivationtype", "normal"),
-//    setPropStrat(s_p2, "calculationstrategy", strat),
-//    
-//    !member[id1, (RICHTYPE(ENTITY(s_e2), m1, INCREMENTAL()), PROPS(s_p1))] in s_r1,
-//    !entity_extension[e1, s_r1] in s,
-//    
-//    !member[id2, (RICHTYPE(ENTITY(s_e1), m2, INCREMENTAL()), PROPS(s_p2))] in s_r2,
-//    !entity_extension[e2, s_r2] in s.
-    
-  
+  	!member[shortcut2_name, (RICHTYPE(role1_type, role2_inverse_mult, INCREMENTAL()), PROPS(s_shortcut1_props))] in s_role2_extension.
