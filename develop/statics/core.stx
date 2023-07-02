@@ -8,6 +8,7 @@ signature
   relations
     entity : ID -> TYPE
     entity_extension : ID * scope
+    prop_extension : scope * scope
     member : ID -> (RICHTYPE * PROPS)
     function : ID -> (RICHTYPE * PROPS)
     implicit : string -> (RICHTYPE * PROPS)
@@ -578,6 +579,16 @@ rules // name resolution
     query implicit
       filter e and { x' :- x' == "membervalue" }
         in s |-> [(_, (_, (RICHTYPE(t, _, _), _)))|_].
+        
+  declareMembervalueTypeWithProps : scope * TYPE * PROPS
+  declareMembervalueTypeWithProps(s, t, props) :-
+  	!implicit["membervalue", (RICHTYPE(t, ONE(), INCREMENTAL()), props)] in s.
+  
+  resolveMembervalueTypeWithProps : scope -> (TYPE * PROPS)
+  resolveMembervalueTypeWithProps(s) = (t, props) :-
+    query implicit
+      filter e and { x' :- x' == "membervalue" }
+        in s |-> [(_, (_, (RICHTYPE(t, _, _), props)))|_].
   
   declareInheritance : scope * list(OptionalExtends)
   
@@ -644,6 +655,27 @@ rules // partial classes / extension
 //  declareScope((_, (_, ENTITY(_, s'))), s) :- s -DECLARE-> s'.
   
 rules // props
+
+
+  initProps : scope * scope -> PROPS
+  initProps(s_context, s_props) = PROPS(s_props) :-
+  	extendPropScopes(resolvePropExtensions(s_context, s_props), s_props).
+  
+  extendProps : scope * scope * scope
+  extendProps(s_context, s_props, s_extension) :-
+  	s_extension -EXTEND-> s_props,
+  	!prop_extension[s_props, s_extension] in s_context.
+
+  resolvePropExtensions : scope * scope -> list((path * (scope * scope)))
+  resolvePropExtensions(s, s_props) = ps :-
+    query prop_extension
+      filter PARENT* and { x' :- x' == (s_props, _) }
+        min and true
+        in s |-> ps.
+  extendPropScopes maps extendPropScope(list(*), *)
+  extendPropScope : (path * (scope * scope)) * scope
+  extendPropScope((_, (_, s)), s).
+  extendPropScope((_, (_, s')), s) :- s -EXTEND-> s'.
   
   setProp: scope * string * string
   setProp(s, key, value) :-
@@ -661,6 +693,14 @@ rules // props
   setPropMult(s, key, mult) :-
     !prop[key, PROPVAL_MULT(mult)] in s.
     
+  setPropType: scope * string * TYPE
+  setPropType(s, key, type) :-
+    !prop[key, PROPVAL_TYPE(type)] in s.
+    
+  setPropOptionalType: scope * string * TYPE
+  setPropOptionalType(s, key, NOTYPE()).
+  setPropOptionalType(s, key, type) :- setPropType(s, key, type).
+    
   setPropRichtypes: scope * string * list(RICHTYPE)
   setPropRichtypes(s, key, richtypes) :-
   	!prop[key, PROPVAL_RICHTYPES(richtypes)] in s.
@@ -668,6 +708,22 @@ rules // props
   getProp: PROPS * string -> PROPVAL
   getProp(PROPS(s), key) = propval :-
   	query prop
-      filter PARENT* and { x' :- x' == key }
+      filter EXTEND? and { x' :- x' == key }
         min and true
         in s |-> [(_, (_, (propval)))].
+        
+  getPropOptionalType : PROPS * string -> TYPE
+  getPropOptionalType(props, key) = type :- { proplist }
+  	proplist == getPropList(props, key),
+  	PROPVAL_TYPE(type) == getPropOptionalTypeFromList(proplist).
+  
+  getPropOptionalTypeFromList : list((path * (string * (PROPVAL)))) -> PROPVAL
+  getPropOptionalTypeFromList([]) = PROPVAL_TYPE(NOTYPE()).
+  getPropOptionalTypeFromList([(_, (_, propval)) | _]) = propval.
+  
+  getPropList : PROPS * STRING -> list((path * (string * (PROPVAL))))
+  getPropList(PROPS(s), key) = proplist :-
+  	query prop
+      filter EXTEND? and { x' :- x' == key }
+        min and true
+        in s |-> proplist.

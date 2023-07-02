@@ -36,22 +36,62 @@ rules
   	declareThisRichtype(s_entity_instance, instance_richtype),
   	memberValuesOk(s_entity_instance, s_data, member_values)
   	.
+  	
+  relationInstanceOk : scope * scope * RelationInstance -> TYPE
   
+  relationInstanceOk(s_member_value, s_data, RelationInstance(name, type, member_values)) = instance_type :-
+  	{ instance_name instance_richtype
+  	  s_entity_instance s_instance_props
+  	  s_member_value_props s_member_value_prop_extension }
+  	instance_name == nameOfIDSpaceList(name),
+  	instance_type == typeOfEntityType(s_data, type),
+  	instance_richtype == RICHTYPE(instance_type, ONE(), INCREMENTAL()),
+  	new s_instance_props,
+  	!member[instance_name, (instance_richtype, PROPS(s_instance_props))] in s_data,
+  	new s_entity_instance,
+  	declareThisRichtype(s_entity_instance, instance_richtype),
+  	(_, PROPS(s_member_value_props)) == resolveMembervalueTypeWithProps(s_member_value),
+  	new s_member_value_prop_extension,
+  	extendProps(s_data, s_member_value_props, s_member_value_prop_extension),
+  	setPropType(s_member_value_prop_extension, "reltype", instance_type),
+  	memberValuesOk(s_entity_instance, s_data, member_values).
+  	
+  relationInstanceOk(s_member_value, s_data, RelationInstanceNoType(name, member_values)) = relation_object_type :-
+  	{ instance_name instance_richtype
+  	  s_entity_instance s_instance_props
+  	  s_member_value_props member_value_props }
+  	instance_name == nameOfIDSpaceList(name),
+  	(_, member_value_props@PROPS(s_member_value_props)) == resolveMembervalueTypeWithProps(s_member_value),
+  	relation_object_type == getPropOptionalType(member_value_props, "reltype"),
+  	instance_richtype == RICHTYPE(relation_object_type, ONE(), INCREMENTAL()),
+  	new s_instance_props,
+  	!member[instance_name, (instance_richtype, PROPS(s_instance_props))] in s_data,
+  	new s_entity_instance,
+  	declareThisRichtype(s_entity_instance, instance_richtype),
+  	memberValuesOk(s_entity_instance, s_data, member_values).
   	
   memberValuesOk maps memberValueOk(*, *, list(*))
   memberValueOk: scope * scope * MemberValue
   
   memberValueOk(s_entity_instance, s_data, MemberValue(member_name, values)) :-
   	{ this_richtype this_type this_mult this_strat s_entity
-  	  member_id member_richtype member_type member_mult member_strat s_member_props
-  	  s_member_value }
+  	  member_id member_richtype member_type member_mult member_strat s_member_props member_props
+  	  s_member_value s_member_value_props member_value_props
+  	  relation_object_type }
   	this_richtype@RICHTYPE(ENTITY(_, s_entity), this_mult, this_strat) == resolveThisRichtype(s_entity_instance),
-  	(member_id, member_richtype@RICHTYPE(member_type, member_mult, member_strat), PROPS(s_member_props)) == resolveMemberWithProps(s_entity, member_name),
+  	(member_id, member_richtype@RICHTYPE(member_type, member_mult, member_strat), member_props@PROPS(s_member_props)) == resolveMemberWithProps(s_entity, member_name),
   	@member_name.ref := member_id,
   	@member_name.type := member_richtype,
   	!member[member_name, (member_richtype, PROPS(s_member_props))] in s_entity_instance,
+  	
   	new s_member_value,
-  	declareMembervalueType(s_member_value, member_type),
+  	new s_member_value_props,
+  	member_value_props == initProps(s_data, s_member_value_props),
+  	declareMembervalueTypeWithProps(s_member_value, member_type, member_value_props),
+  	
+  	relation_object_type == getPropOptionalType(member_props, "reltype"),
+  	setPropOptionalType(s_member_value_props, "reltype", relation_object_type),
+  	
   	valuesOk(s_member_value, s_data, member_type, values).
   	
   valuesOk maps valueOk(*, *, *, list(*))
@@ -67,7 +107,7 @@ rules
   typeOfValue(s_member_value, s_data, member_type, EntityInstanceValue2Value(eiv)) = t :-
   	t == typeOfEntityInstanceValue(s_member_value, s_data, member_type, eiv).
   typeOfValue(s_member_value, s_data, member_type, EntityInstanceWrapper(relation_instance, entity_instance_value)) = eiv_type :- { ri_type }
-  	// do something with relation instance
+  	relationInstanceOk(s_member_value, s_data, relation_instance) == _,
   	eiv_type == typeOfEntityInstanceValue(s_member_value, s_data, member_type, entity_instance_value).
   	
   typeOfEntityInstanceValue : scope * scope * TYPE * EntityInstanceValue -> TYPE

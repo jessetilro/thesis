@@ -57,7 +57,13 @@ rules // module sections
   sectionOk(s, s_data, DataSection(datas)) :- { s_empty }
  	new s_empty,
   	datasOk(s_empty, s_data, datas).
-  sectionOk(s, s_data, ExecuteSection(_)).
+  sectionOk(s, s_data, ExecuteSection(executes)) :-
+  	executesOk(s_data, executes).
+  	
+  executesOk maps executeOk(*, list(*))
+  executeOk : scope * Execute
+  executeOk(s, Exp2Execute(exp)) :-
+  	richTypeOfExp(s, exp) == _.
   
 rules // models
   
@@ -109,7 +115,7 @@ rules // models
     setProp(s_p1, "ns", "relation"),
     setProp(s_p1, "inverse", id2),
     setProp(s_p1, "side", "left"),
-    setProp(s_p1, "reltype", "none"),
+    setPropType(s_p1, "reltype", NOTYPE()),
     setProp(s_p1, "derivationtype", "normal"),
     setPropStrat(s_p1, "calculationstrategy", INCREMENTAL()),
     
@@ -117,7 +123,7 @@ rules // models
     setProp(s_p2, "ns", "relation"),
     setProp(s_p2, "inverse", id1),
     setProp(s_p2, "side", "right"),
-    setProp(s_p2, "reltype", "none"),
+    setPropType(s_p2, "reltype", NOTYPE()),
     setProp(s_p2, "derivationtype", "normal"),
     setPropStrat(s_p2, "calculationstrategy", INCREMENTAL()),
     
@@ -155,7 +161,7 @@ rules // models
     setProp(s_p1, "ns", "relation"),
     setProp(s_p1, "inverse", id2),
     setProp(s_p1, "side", "left"),
-    setProp(s_p1, "reltype", "none"),
+    setPropType(s_p1, "reltype", NOTYPE()),
     setProp(s_p1, "derivationtype", "derivation"),
     setPropStrat(s_p1, "calculationstrategy", strat),
     
@@ -163,7 +169,7 @@ rules // models
     setProp(s_p2, "ns", "relation"),
     setProp(s_p2, "inverse", id1),
     setProp(s_p2, "side", "right"),
-    setProp(s_p2, "reltype", "none"),
+    setPropType(s_p2, "reltype", NOTYPE()),
     setProp(s_p2, "derivationtype", "normal"),
     setPropStrat(s_p2, "calculationstrategy", strat),
     
@@ -191,7 +197,7 @@ rules // models
     setProp(s_p, "ns", "attribute"),
     setProp(s_p, "derivationtype", "derivation"),
     setPropExp(s_p, "expr", exp),
-    setProp(s_p, "reltype", "none"),
+    setPropType(s_p, "reltype", NOTYPE()),
     setProp(s_p, "side", "none"),
     setPropStrat(s_p, "calculationstrategy", d_strat),
     setProp(s_p, "inlining", "inline"),
@@ -218,7 +224,7 @@ rules // models
     setProp(s_p, "ns", "attribute"),
     setProp(s_p, "derivationtype", "derivation"),
     setPropExp(s_p, "expr", exp),
-    setProp(s_p, "reltype", "none"),
+    setPropType(s_p, "reltype", NOTYPE()),
     setProp(s_p, "side", "none"),
     setPropStrat(s_p, "calculationstrategy", d_strat),
     setProp(s_p, "inlining", "not_inline"),
@@ -245,7 +251,7 @@ rules // models
     setProp(s_p, "ns", "attribute"),
     setProp(s_p, "derivationtype", "default_value"),
     setPropExp(s_p, "expr", exp),
-    setProp(s_p, "reltype", "none"),
+    setPropType(s_p, "reltype", NOTYPE()),
     setProp(s_p, "side", "none"),
     setPropStrat(s_p, "calculationstrategy", d_strat),
     setProp(s_p, "inlining", "not_inline"),
@@ -281,7 +287,7 @@ rules // models
     setProp(s_p, "ns", "attribute"),
     setProp(s_p, "derivationtype", "abstract"),
     setProp(s_p, "reltype", "none"),
-    setProp(s_p, "side", "none"),
+    setPropType(s_p, "side", NOTYPE()),
     setPropStrat(s_p, "calculationstrategy", d_strat),
     setProp(s_p, "inlining", "not_inline"),
     
@@ -324,7 +330,8 @@ rules // models
   	  role2_id role2_type role2_mult role2_strat s_role2 role2_props role2_inverse_mult
   	  shortcut1_name shortcut2_name
   	  s_role1_extension role1_name s_shortcut1_props
-  	  s_role2_extension role2_name s_shortcut2_props }
+  	  s_role2_extension role2_name s_shortcut2_props
+  	  this_type }
   	// resolve references
   	(role1_id, RICHTYPE(role1_type@ENTITY(_, s_role1), role1_mult, role1_strat), role1_props) == resolveMemberWithProps(s, role1),
   	@role1.ref := role1_id,
@@ -335,6 +342,8 @@ rules // models
   	PROPVAL_MULT(role2_inverse_mult) == getProp(role2_props, "inverse_mult"),
   	shortcut2_name == nameOfDotIDList(shortcut2),
   	
+  	RICHTYPE(this_type, _, _) == resolveThisRichtype(s),
+  	
   	// declare role1 member
   	new s_role1_extension,
     s_role1_extension -EXTEND-> s_role1,
@@ -343,6 +352,7 @@ rules // models
     !entity_extension[role1_name, s_role1_extension] in s_root,
   	
   	new s_shortcut1_props,
+  	setPropType(s_shortcut1_props, "reltype", this_type),
   	!member[shortcut1_name, (RICHTYPE(role2_type, role1_inverse_mult, INCREMENTAL()), PROPS(s_shortcut1_props))] in s_role1_extension,
   	
   	// declare role2 member
@@ -353,4 +363,5 @@ rules // models
     !entity_extension[role2_name, s_role2_extension] in s_root,
   	
   	new s_shortcut2_props,
+  	setPropType(s_shortcut2_props, "reltype", this_type),
   	!member[shortcut2_name, (RICHTYPE(role1_type, role2_inverse_mult, INCREMENTAL()), PROPS(s_shortcut1_props))] in s_role2_extension.
