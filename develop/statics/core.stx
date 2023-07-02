@@ -487,6 +487,7 @@ rules // type checking
   richTypeOfLitVal(True()) = RICHTYPE(BOOLEAN(), ONE(), INCREMENTAL()).
   richTypeOfLitVal(False()) = RICHTYPE(BOOLEAN(), ONE(), INCREMENTAL()).
   richTypeOfLitVal(String(_)) = RICHTYPE(STRING(), ONE(), INCREMENTAL()).
+  richTypeOfLitVal(Datetime(_)) = RICHTYPE(DATETIME(), ONE(), INCREMENTAL()).
   richTypeOfLitVal(NoValue()) = RICHTYPE(NOVALUE(), ONE(), INCREMENTAL()).
   
   typeOfLitVal : LitVal -> TYPE

@@ -111,8 +111,9 @@ rules
   	eiv_type == typeOfEntityInstanceValue(s_member_value, s_data, member_type, entity_instance_value).
   	
   typeOfEntityInstanceValue : scope * scope * TYPE * EntityInstanceValue -> TYPE
-  typeOfEntityInstanceValue(s_member_value, s_data, member_type, EntityInstanceRef(eir)) = t :-
-  	(_, RICHTYPE(t, _, _)) == resolveMember(s_member_value, eir).
+  typeOfEntityInstanceValue(s_member_value, s_data, member_type, EntityInstanceRef(eir)) = t :- { decl_id }
+  	(decl_id, RICHTYPE(t, _, _)) == resolveMember(s_data, eir),
+  	@eir.ref := decl_id.
   typeOfEntityInstanceValue(s_member_value, s_data, member_type, EntityInstance2EntityInstanceValue(ei)) = t :-
   	t == entityInstanceOk(s_member_value, s_data, ei).
   	

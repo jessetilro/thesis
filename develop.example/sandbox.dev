@@ -1,18 +1,31 @@
 module test
   model
-entity Node {
+    entity One {
+      x : Boolean
+    }
+	entity Two {	
+	  y : Boolean
+	}
 	
-    name : String = concat(this.a.name) <+ ""
-    y : Boolean
-  }
-  relation Edge{
-    Node.in *  -> in
-    Node.out * -> out
-    in.a <-> out.b
-  }
+	relation OneTwo {
+		One.onetwo -> one
+		Two.onetwo -> two
+		
+		one.two <-> two.one
+		
+		test : Boolean
+	}
   
 data
 
-  test : Node {
-  	y = true
+  test : One {
+  	onetwo = <:OneTwo{}> {}
+  	two = <{ test = true }> {}
   }
+  :Two {
+  	one = test
+  }
+  
+execute
+
+	test.two.y
