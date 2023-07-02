@@ -25,6 +25,7 @@
       DATETIME : TYPE
       NOVALUE : TYPE
       ENTITY : ID * scope -> TYPE
+      NOTYPE : TYPE
       
       ONE : MULT
       ZERO_ONE : MULT
