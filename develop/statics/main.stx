@@ -72,6 +72,7 @@ rules // models
   modelOk : scope * Model
   
   modelOk(s, Entity(id, optional_extends, _, members)) :- { s_model s_resolve rtype s_parent parent_decl_id }
+  	// declaration
     new s_model, s_model -PARENT-> s,
     declareEntity(s, id, s_model),
     resolveEntity(s_model, id) == (_, ENTITY(_, s_resolve)) | error $[duplicate definition of entity [id]]@id,
@@ -84,7 +85,8 @@ rules // models
     membersOk(s, s_model, members).
     
   modelOk(s, FirstClassRelation(id, _, strat, members)) :-
-  	{ s_model s_resolve this_type this_mult this_strat } // identical to Entity
+  	{ s_model s_resolve this_type this_mult this_strat }
+  	// declaration
     new s_model, s_model -PARENT-> s,
     declareEntity(s, id, s_model),
     resolveEntity(s_model, id) == (_, ENTITY(_, s_resolve)) | error $[duplicate definition of entity [id]]@id,
@@ -92,7 +94,11 @@ rules // models
     this_mult == ONE(),
     this_strat == stratOfStratList(strat),
     @id.type := this_type,
+    // extension
+    extendScopes(resolveEntityExtensions(s, id), s_model),
+    // this binding
     declareThisRichtype(s_model, RICHTYPE(this_type, this_mult, this_strat)),
+    // members
     membersOk(s, s_model, members).
     
   modelOk(s, Relation(e1, r1, m1_optional, m2_optional, e2, r2)) :-
@@ -129,9 +135,11 @@ rules // models
     setPropStrat(s_p2, "calculationstrategy", INCREMENTAL()),
     
     !member[id1, (RICHTYPE(ENTITY(_, s_e2), m1, INCREMENTAL()), PROPS(s_p1))] in s_r1,
+    assertMemberDeclarationUnique(s_r1, id1),
     !entity_extension[e1, s_r1] in s,
     
     !member[id2, (RICHTYPE(ENTITY(_, s_e1), m2, INCREMENTAL()), PROPS(s_p2))] in s_r2,
+    assertMemberDeclarationUnique(s_r2, id2),
     !entity_extension[e2, s_r2] in s.
    
   modelOk(s, RelationDerived(e1, r1, m1_optional, expr, m2_optional, e2, r2, str)) :-
@@ -175,9 +183,11 @@ rules // models
     setPropStrat(s_p2, "calculationstrategy", strat),
     
     !member[id1, (RICHTYPE(ENTITY(_, s_e2), m1, INCREMENTAL()), PROPS(s_p1))] in s_r1,
+    assertMemberDeclarationUnique(s_r1, id1),
     !entity_extension[e1, s_r1] in s,
     
     !member[id2, (RICHTYPE(ENTITY(_, s_e1), m2, INCREMENTAL()), PROPS(s_p2))] in s_r2,
+    assertMemberDeclarationUnique(s_r2, id2),
     !entity_extension[e2, s_r2] in s.
     
   membersOk maps memberOk(*, *, list(*))
@@ -306,6 +316,7 @@ rules // models
   	s_props_this s_props_entity }
   	// resolve references
 	(entity_name, entity_type@ENTITY(_, s_entity)) == resolveEntity(s, entity) | error $[entity [entity] is not declared],
+	@entity.ref := entity_name,
 	inverse_name == nameOfDotIDList(inverse),
     inverse_mult == multOfSpaceMultList(mult),
 	this_richtype@RICHTYPE(this_type, this_mult, this_strat) == resolveThisRichtype(s),
@@ -315,6 +326,7 @@ rules // models
 	new s_props_this,
 	setPropMult(s_props_this, "inverse_mult", inverse_mult),
     !member[role_name, (RICHTYPE(entity_type, ONE(), INCREMENTAL()), PROPS(s_props_this))] in s,
+    assertMemberDeclarationUnique(s, role_name),
 	
 	// declare entity member
 	new s_entity_extension,
@@ -323,7 +335,8 @@ rules // models
     !entity_extension[entity_name, s_entity_extension] in s_root,
     
     new s_props_entity,
-    !member[inverse_name, (RICHTYPE(this_type, inverse_mult, INCREMENTAL()), PROPS(s_props_entity))] in s_entity_extension.
+    !member[inverse_name, (RICHTYPE(this_type, inverse_mult, INCREMENTAL()), PROPS(s_props_entity))] in s_entity_extension,
+    assertMemberDeclarationUnique(s_entity_extension, inverse_name).
     
     
   memberOk(s_root, s, Shortcut(role1, shortcut1, role2, shortcut2)) :-
@@ -355,6 +368,7 @@ rules // models
   	new s_shortcut1_props,
   	setPropType(s_shortcut1_props, "reltype", this_type),
   	!member[shortcut1_name, (RICHTYPE(role2_type, role1_inverse_mult, INCREMENTAL()), PROPS(s_shortcut1_props))] in s_role1_extension,
+  	assertMemberDeclarationUnique(s_role1_extension, shortcut1_name),
   	
   	// declare role2 member
   	new s_role2_extension,
@@ -365,4 +379,5 @@ rules // models
   	
   	new s_shortcut2_props,
   	setPropType(s_shortcut2_props, "reltype", this_type),
-  	!member[shortcut2_name, (RICHTYPE(role1_type, role2_inverse_mult, INCREMENTAL()), PROPS(s_shortcut1_props))] in s_role2_extension.
+  	!member[shortcut2_name, (RICHTYPE(role1_type, role2_inverse_mult, INCREMENTAL()), PROPS(s_shortcut1_props))] in s_role2_extension,
+  	assertMemberDeclarationUnique(s_role2_extension, shortcut2_name).

@@ -1,3 +1,18 @@
+//module test
+//  model
+//    entity Foo {
+//      i : Int
+//    }
+//    relation Foo.foreward <-> Foo.backward {}
+//  data
+//    foo : Foo {
+//      i = 5
+//      foreward = 
+//        innerFoo {
+//          i = 7
+//        }
+//    }
+
 module test
   model
     entity One extends Two {
@@ -19,10 +34,33 @@ module test
 		test : Boolean
 	}
 	
-functions
-  
-  round1(f : Float) : Float = (f * 10.0 + 0.5) as Int as Float / 10.0
-  
+//	relation Student{
+//    Enrollment.x * -> enrollment
+//	  }
+//	  
+//	  relation Enrollment{
+//	    Student.enrollment * -> student
+//	  }
+	  
+//	relation Student{
+//    Course.student * -> course
+//  }
+//  
+//  entity Course{
+//    
+//  }
+//  
+//  relation Enrollment{
+//    Student.y * -> student
+//    Course.z *  -> course
+//    
+//    student.courseShort <-> course.student
+//  }
+//	
+//functions
+//  
+//  round1(f : Float) : Float = (f * 10.0 + 0.5) as Int as Float / 10.0
+//  
 data
 
   test : One {
@@ -30,9 +68,20 @@ data
   	two = <{ test = true }> {}
   }
   :Two {
-  	one = test
+  	one = :One{
+  		two = :Two {
+  			one = test
+  		}
+  	}
   }
-  
-execute
-
-	test.two.y
+  :Two {
+  	one = :One{
+  		two = :Two {
+  			one = test
+  		}
+  	}
+  }
+//  
+//execute
+//
+//	test.two.y

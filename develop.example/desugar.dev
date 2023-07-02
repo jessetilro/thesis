@@ -1,0 +1,11 @@
+module desugar
+
+model
+
+entity Node {}
+  relation Edge {
+    Node 1
+    Node 1
+    
+    node.c <-> node.d
+  }

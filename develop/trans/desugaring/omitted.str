@@ -62,8 +62,8 @@ rules // role fields
 
   role-generate-omitted =
     is-role;
-    role-generate-mult;
-    role-generate-name
+    try(role-generate-mult);
+    try(role-generate-name)
 
 	role-generate-mult: role -> role'
 	where
@@ -200,7 +200,7 @@ rules // shortcuts (context sensitive)
 
 rules // shortcutrels -> shortcut relations 
 
-  shortcutrel-to-rel: scr@ShortcutRelation(e1, s1, m1, m2, e2, s2, strategy, attrs) -> result
+  shortcutrel-to-rel: scr@ShortcutRelation(e1, Some(s1), m1, m2, e2, Some(s2), strategy, attrs) -> result
     with
       relname  := <custom-origin(|e1)>$[[e1][<ucfirst>s1]Relation];
       invname1 := <custom-origin(|e1)>$[[s2]Relation];
@@ -210,9 +210,9 @@ rules // shortcutrels -> shortcut relations
         relname
       , None()
       , strategy
-      , [ <custom-origin(|e2)>Role(e1, invname2, m1, s2)
-        , <custom-origin(|e1)>Role(e2, invname1, m2, s1)
-        , <custom-origin(|e1)>Shortcut(<copy-string>s1, <copy-string>s2, <copy-string>s2, <copy-string>s1)
+      , [ <custom-origin(|e2)>Role(e1, Some(invname2), m1, Some(s2))
+        , <custom-origin(|e1)>Role(e2, Some(invname1), m2, Some(s1))
+        , <custom-origin(|e1)>Shortcut(<copy-string>s1, Some(<copy-string>s2), <copy-string>s2, Some(<copy-string>s1))
         | attrs
         ]
       )  

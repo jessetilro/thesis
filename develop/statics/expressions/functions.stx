@@ -80,8 +80,9 @@ rules
     multupper(e2_mult) == UONE() | error $[Multiplicity mismatch: Expected One or ZeroOrOne got [e2_mult]]@e2,
     out_strat == stratLub(e1_strat, e2_strat).
     
-  richTypeOfExp(s, Function(f, es)) = RICHTYPE(type, out_mult, out_strat) :- { props paramtypes mult strat es_mult es_strat }
-    (_, RICHTYPE(type, mult, strat), props) == resolveFunction(s, f) | error $[missing declaration for function [f]],
+  richTypeOfExp(s, Function(f, es)) = RICHTYPE(type, out_mult, out_strat) :- { props paramtypes mult strat es_mult es_strat f_decl_id }
+    (f_decl_id, RICHTYPE(type, mult, strat), props) == resolveFunction(s, f) | error $[missing declaration for function [f]],
+    @f.ref := f_decl_id,
     PROPVAL_RICHTYPES(paramtypes) == getProp(props, "paramtypes"),
     RICHTYPE(_, es_mult, es_strat) == pairwiseEqual(s, es, paramtypes),
     out_mult == multLub(mult, es_mult),

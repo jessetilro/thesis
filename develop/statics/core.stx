@@ -539,14 +539,15 @@ rules // name resolution
   assertMemberDeclarationUnique : scope * ID
   assertMemberDeclarationUnique(s, id) :-
   	query member
-      filter e and { x' :- x' == id }
+      filter PARENT* EXTEND? EXTEND? and { x' :- x' == id }
         in s |-> [_]
         | error $[duplicate declaration of member [id]]@id.
   
   declareFunction : scope * ID * RICHTYPE * PROPS
   
   declareFunction(s, id, richtype, props) :-
-    !function[id, (richtype, props)] in s.
+    !function[id, (richtype, props)] in s,
+    assertFunctionDeclarationUnique(s, id).
 
   resolveFunction : scope * ID -> (ID * RICHTYPE * PROPS)
   
@@ -555,6 +556,13 @@ rules // name resolution
       filter PARENT* and { x' :- x' == ref_id }
         min and true
         in s |-> [(_, (decl_id, (richtype, props)))].
+     
+  assertFunctionDeclarationUnique : scope * ID
+  assertFunctionDeclarationUnique(s, id) :-
+  	query function
+      filter e and { x' :- x' == id }
+        in s |-> [_]
+        | error $[duplicate declaration of function [id]]@id.
         
   resolveThisType : scope -> TYPE
   resolveThisType(s) = ENTITY(_, s). // todo actually declare "this" and resolve it

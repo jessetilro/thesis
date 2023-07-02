@@ -20,6 +20,7 @@ rules
   	instance_richtype == RICHTYPE(instance_type, ONE(), INCREMENTAL()),
   	new s_instance_props,
   	!member[instance_name, (instance_richtype, PROPS(s_instance_props))] in s_data,
+  	assertMemberDeclarationUnique(s_data, instance_name),
   	new s_entity_instance,
   	declareThisRichtype(s_entity_instance, instance_richtype),
   	memberValuesOk(s_entity_instance, s_data, member_values).
@@ -32,6 +33,7 @@ rules
   	instance_richtype == RICHTYPE(instance_type, ONE(), INCREMENTAL()),
   	new s_instance_props,
   	!member[instance_name, (instance_richtype, PROPS(s_instance_props))] in s_data,
+  	assertMemberDeclarationUnique(s_data, instance_name),
   	new s_entity_instance,
   	declareThisRichtype(s_entity_instance, instance_richtype),
   	memberValuesOk(s_entity_instance, s_data, member_values)
@@ -48,6 +50,7 @@ rules
   	instance_richtype == RICHTYPE(instance_type, ONE(), INCREMENTAL()),
   	new s_instance_props,
   	!member[instance_name, (instance_richtype, PROPS(s_instance_props))] in s_data,
+  	assertMemberDeclarationUnique(s_data, instance_name),
   	new s_entity_instance,
   	declareThisRichtype(s_entity_instance, instance_richtype),
   	(_, PROPS(s_member_value_props)) == resolveMembervalueTypeWithProps(s_member_value),
@@ -66,6 +69,7 @@ rules
   	instance_richtype == RICHTYPE(relation_object_type, ONE(), INCREMENTAL()),
   	new s_instance_props,
   	!member[instance_name, (instance_richtype, PROPS(s_instance_props))] in s_data,
+  	assertMemberDeclarationUnique(s_data, instance_name),
   	new s_entity_instance,
   	declareThisRichtype(s_entity_instance, instance_richtype),
   	memberValuesOk(s_entity_instance, s_data, member_values).
@@ -83,6 +87,7 @@ rules
   	@member_name.ref := member_id,
   	@member_name.type := member_richtype,
   	!member[member_name, (member_richtype, PROPS(s_member_props))] in s_entity_instance,
+  	assertMemberDeclarationUnique(s_entity_instance, member_name),
   	
   	new s_member_value,
   	new s_member_value_props,
