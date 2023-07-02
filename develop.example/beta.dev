@@ -2,7 +2,7 @@ module beta
 
 model
 
-  entity Super {
+  entity Super extends Y {
     super : Int = 42
   }
 

@@ -591,13 +591,26 @@ rules // name resolution
       filter e and { x' :- x' == "membervalue" }
         in s |-> [(_, (_, (RICHTYPE(t, _, _), props)))|_].
   
-  declareInheritance : scope * list(OptionalExtends)
+  declareInheritance : scope * ID * list(OptionalExtends)
   
-  declareInheritance(s_entity, []).
-  declareInheritance(s_entity, [OptionalExtends(Extends(parent_entity))]) :- { s_parent }
-    resolveEntity(s_entity, parent_entity) == (_, ENTITY(_, s_parent)),
-    s_entity -INHERIT-> s_parent.
+  declareInheritance(s_entity, _, []).
+  declareInheritance(s_entity, entity_id, [extends_decl@OptionalExtends(node@Extends(parent_entity))]) :- { s_parent parent_decl_id }
+    resolveEntity(s_entity, parent_entity) == (parent_decl_id, ENTITY(_, s_parent)),
+    s_entity -INHERIT-> s_parent,
+    @parent_entity.ref := parent_decl_id,
+    // inheritance cyle detection: reflexive case
+    entity_id != parent_entity | error $[entity [entity_id] cannot inherit from itself]@extends_decl,
+    // inheritance cycle detection: symmetric and transitive cases
+    assertNoCyclicInheritance(s_entity, s_parent) | error $[inheritance is not allowed to be cyclic]@extends_decl.
     
+  assertNoCyclicInheritance : scope * scope
+  assertNoCyclicInheritance(s_entity, s_parent) :-
+  	s_entity != s_parent,
+    query ()
+    	filter INHERIT+ and { s :- s == s_entity }
+		min $ < INHERIT
+	  	in s_parent |-> []. 
+   
   subtypeEntity: TYPE * TYPE
   subtypeEntity(ENTITY(_, x), ENTITY(_, x)).
   subtypeEntity(ENTITY(_, s_entity), ENTITY(_, s_super)) :- {results}

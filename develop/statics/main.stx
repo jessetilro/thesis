@@ -71,20 +71,21 @@ rules // models
   
   modelOk : scope * Model
   
-  modelOk(s, Entity(id, optional_parent, _, members)) :- { s_model s_resolve rtype }
+  modelOk(s, Entity(id, optional_extends, _, members)) :- { s_model s_resolve rtype s_parent parent_decl_id }
     new s_model, s_model -PARENT-> s,
-    setProp(s_model, "kind", "entity123"),
     declareEntity(s, id, s_model),
     resolveEntity(s_model, id) == (_, ENTITY(_, s_resolve)) | error $[duplicate definition of entity [id]]@id,
     @id.type := ENTITY(_, s_resolve),
+    // extension
     extendScopes(resolveEntityExtensions(s, id), s_model),
-    membersOk(s, s_model, members),
-    declareInheritance(s_model, optional_parent).
+    // inheritance
+    declareInheritance(s_model, id, optional_extends),
+    // members
+    membersOk(s, s_model, members).
     
   modelOk(s, FirstClassRelation(id, _, strat, members)) :-
   	{ s_model s_resolve this_type this_mult this_strat } // identical to Entity
     new s_model, s_model -PARENT-> s,
-    setProp(s_model, "kind", "first_class_relation"),
     declareEntity(s, id, s_model),
     resolveEntity(s_model, id) == (_, ENTITY(_, s_resolve)) | error $[duplicate definition of entity [id]]@id,
     this_type == ENTITY(_, s_resolve),

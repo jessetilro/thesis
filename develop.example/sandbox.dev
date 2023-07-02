@@ -1,10 +1,13 @@
 module test
   model
-    entity One {
-      x : Boolean
+    entity One extends Two {
+    	x : Boolean
     }
-	entity Two {	
-	  y : Boolean
+	entity Two extends Three {
+		y : Boolean = z
+	}
+	entity Three {
+		z : Boolean
 	}
 	
 	relation OneTwo {
@@ -15,6 +18,10 @@ module test
 		
 		test : Boolean
 	}
+	
+functions
+  
+  round1(f : Float) : Float = (f * 10.0 + 0.5) as Int as Float / 10.0
   
 data
 
