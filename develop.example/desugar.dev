@@ -1,11 +1,17 @@
-module desugar
+ module test
+ 
+ model
+ 
+  entity Course{}
+  entity Project{}
+  entity Issue{}
 
-model
-
-entity Node {}
-  relation Edge {
-    Node 1
-    Node 1
-    
-    node.c <-> node.d
+  relation IssueProject{
+    Issue 1
+    Project *
+  }
+  
+  relation ProjectIssue{
+    Issue 1
+    Project *
   }

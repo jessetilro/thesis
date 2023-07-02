@@ -520,8 +520,25 @@ rules // name resolution
         min and true
         in s |-> ps.
      
+  assertMemberOverrideOk : INLINING * scope * ID
+  assertMemberOverrideOk(own_inlining, s, id) :- { overridden_members }
+  	overridden_members == resolveOverriddenMembers(s, id),
+  	assertOverriddenMembersOk(own_inlining, id, overridden_members).
+  	
+  assertOverriddenMembersOk : INLINING * ID * list((path * (ID * (RICHTYPE * PROPS))))
+  assertOverriddenMembersOk(_, _, []).
+  assertOverriddenMembersOk(own_inlining, id, [(_, (decl_id, (_, props@PROPS(s_props))))|_]) :-
+  	own_inlining != INLINE() | error $[cannot override [decl_id] with inline attribute]@id,
+  	PROPVAL_INLINING(NOT_INLINE()) == getProp(props, "inlining") | error $[cannot override inline attribute [decl_id]]@id.
+     
+  resolveOverriddenMembers : scope * ID -> list((path * (ID * (RICHTYPE * PROPS))))
+  resolveOverriddenMembers(s, ref_id) = result :-
+    query member
+      filter PARENT* EXTEND? INHERIT+ EXTEND? and { x' :- x' == ref_id }
+        min $ < EXTEND, EXTEND < INHERIT and true
+        in s |-> result.
+     
   resolveMember : scope * ID -> (ID * RICHTYPE) 
-      
   resolveMember(s, ref_id) = (decl_id, richtype) :-
     query member
       filter PARENT* EXTEND? INHERIT* EXTEND? and { x' :- x' == ref_id }
@@ -529,7 +546,6 @@ rules // name resolution
         in s |-> [(_, (decl_id, (richtype, _)))|_].
        
   resolveMemberWithProps : scope * ID -> (ID * RICHTYPE * PROPS) 
-      
   resolveMemberWithProps(s, ref_id) = (decl_id, richtype, props) :-
     query member
       filter PARENT* EXTEND? INHERIT* EXTEND? and { x' :- x' == ref_id }
@@ -714,6 +730,10 @@ rules // props
   setPropMult: scope * string * MULT
   setPropMult(s, key, mult) :-
     !prop[key, PROPVAL_MULT(mult)] in s.
+    
+  setPropInlining: scope * string * INLINING
+  setPropInlining(s, key, inlining) :-
+    !prop[key, PROPVAL_INLINING(inlining)] in s.
     
   setPropType: scope * string * TYPE
   setPropType(s, key, type) :-

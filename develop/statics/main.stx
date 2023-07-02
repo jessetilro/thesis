@@ -173,6 +173,7 @@ rules // models
     setPropType(s_p1, "reltype", NOTYPE()),
     setProp(s_p1, "derivationtype", "derivation"),
     setPropStrat(s_p1, "calculationstrategy", strat),
+    setPropInlining(s_p1, "inlining", NOT_INLINE()),
     
     new s_p2,
     setProp(s_p2, "ns", "relation"),
@@ -181,6 +182,7 @@ rules // models
     setPropType(s_p2, "reltype", NOTYPE()),
     setProp(s_p2, "derivationtype", "normal"),
     setPropStrat(s_p2, "calculationstrategy", strat),
+    setPropInlining(s_p2, "inlining", NOT_INLINE()),
     
     !member[id1, (RICHTYPE(ENTITY(_, s_e2), m1, INCREMENTAL()), PROPS(s_p1))] in s_r1,
     assertMemberDeclarationUnique(s_r1, id1),
@@ -211,10 +213,11 @@ rules // models
     setPropType(s_p, "reltype", NOTYPE()),
     setProp(s_p, "side", "none"),
     setPropStrat(s_p, "calculationstrategy", d_strat),
-    setProp(s_p, "inlining", "inline"),
+    setPropInlining(s_p, "inlining", INLINE()),
     
     !member[id, (RICHTYPE(d_type, d_mult, d_strat), PROPS(s_p))] in s,
     assertMemberDeclarationUnique(s, id),
+    assertMemberOverrideOk(INLINE(), s, id),
     
     @id.type := RICHTYPE(d_type, d_mult, d_strat),
     @exp.type := RICHTYPE(e_type, e_mult, e_strat).
@@ -238,10 +241,11 @@ rules // models
     setPropType(s_p, "reltype", NOTYPE()),
     setProp(s_p, "side", "none"),
     setPropStrat(s_p, "calculationstrategy", d_strat),
-    setProp(s_p, "inlining", "not_inline"),
+    setPropInlining(s_p, "inlining", NOT_INLINE()),
     
     !member[id, (RICHTYPE(d_type, d_mult, d_strat), PROPS(s_p))] in s,
     assertMemberDeclarationUnique(s, id),
+    assertMemberOverrideOk(NOT_INLINE(), s, id),
     
     @id.type := RICHTYPE(d_type, d_mult, d_strat),
     @exp.type := RICHTYPE(e_type, e_mult, e_strat).
@@ -265,10 +269,11 @@ rules // models
     setPropType(s_p, "reltype", NOTYPE()),
     setProp(s_p, "side", "none"),
     setPropStrat(s_p, "calculationstrategy", d_strat),
-    setProp(s_p, "inlining", "not_inline"),
+    setPropInlining(s_p, "inlining", NOT_INLINE()),
     
     !member[id, (RICHTYPE(d_type, d_mult, d_strat), PROPS(s_p))] in s,
     assertMemberDeclarationUnique(s, id),
+    assertMemberOverrideOk(NOT_INLINE(), s, id),
     
     @id.type := RICHTYPE(d_type, d_mult, d_strat),
     @exp.type := RICHTYPE(e_type, e_mult, e_strat).
@@ -280,10 +285,10 @@ rules // models
     d_strat == INCREMENTAL(),
     
     new s_p,
-    setProp(s_p, "inlining", "not_inline"),
-    
+    setPropInlining(s_p, "inlining", NOT_INLINE()),
     !member[id, (RICHTYPE(d_type, d_mult, d_strat), PROPS(s_p))] in s,
     assertMemberDeclarationUnique(s, id),
+    assertMemberOverrideOk(NOT_INLINE(), s, id),
     
     @id.type := RICHTYPE(d_type, d_mult, d_strat).
   
@@ -300,10 +305,11 @@ rules // models
     setProp(s_p, "reltype", "none"),
     setPropType(s_p, "side", NOTYPE()),
     setPropStrat(s_p, "calculationstrategy", d_strat),
-    setProp(s_p, "inlining", "not_inline"),
+    setPropInlining(s_p, "inlining", NOT_INLINE()),
     
     !member[id, (RICHTYPE(d_type, d_mult, d_strat), PROPS(s_p))] in s,
     assertMemberDeclarationUnique(s, id),
+    assertMemberOverrideOk(NOT_INLINE(), s, id),
     
     @id.type := RICHTYPE(d_type, d_mult, d_strat).
     

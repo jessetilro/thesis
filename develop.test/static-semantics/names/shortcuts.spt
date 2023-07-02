@@ -1,0 +1,97 @@
+module names-shortcuts
+
+language develop
+
+fixture [[
+  module inverses
+
+  model
+  
+    [[...]]
+]]
+
+test Resolve shortcut [[
+  entity Course{}
+  entity Student{
+    numCourses : Int = count(this.[[courses]])
+  }
+  
+  relation Enrollment{
+    Student *
+    Course  +
+    
+    student.[[courses]] <-> course.students
+  }
+]] resolve #1 to #2
+
+test Resolve invalid shortcut fails [[
+  entity Course{}
+  entity Student{
+    numCourses : Int = [[count(this.iDoNotExist)]]
+  }
+  
+  relation Enrollment{
+    Student *
+    Course  +
+    
+    student.courses <-> course.students
+  }
+]] >= 1 error at #1
+
+test Resolve role in shortcut [[
+  entity Course{}
+  entity Student{
+  }
+  
+  relation Enrollment{
+    Student.y * -> [[student]]
+    Course.x  + -> course
+    
+    student.abc <-> [[student]].bcd
+  }
+]] resolve #2 to #1
+
+test Resolve invalid role in shortcut fails [[
+  entity Course{}
+  entity Student{
+  }
+  
+  relation Enrollment{
+    Student *
+    Course  +
+    
+    student.abc <-> iDoNotExist.bcd
+  }
+]] >= 1 error
+
+test error on duplicate shortcut [[
+  entity Course{}
+  entity Node {}
+  relation Edge {
+    Node.c 1 -> a
+    Node.d 1 -> b
+    
+    a.[[node]] <-> b.[[node]]
+  }
+  
+config
+
+  language features : first-class relations
+]] 2 errors at #1,#2
+
+// omission
+//test error on duplicate shortcut by desugaring [[
+//  entity Course{}
+//  entity Project{}
+//  entity Issue{}
+//
+//  relation IssueProject{
+//    [[Issue]] 1
+//    [[Project]] *
+//  }
+//  
+//  relation ProjectIssue{
+//    [[Issue]] 1
+//    [[Project]] *
+//  }
+//]] >= 4 errors at #1,#2,#3,#4
