@@ -136,7 +136,7 @@ rules // models
     setProp(s_p1, "inverse", id2),
     setProp(s_p1, "side", "left"),
     setPropType(s_p1, "reltype", NOTYPE()),
-    setProp(s_p1, "derivationtype", "normal"),
+    setPropDeriv(s_p1, "derivationtype", NORMAL()),
     setPropStrat(s_p1, "calculationstrategy", INCREMENTAL()),
     
     new s_p2,
@@ -144,7 +144,7 @@ rules // models
     setProp(s_p2, "inverse", id1),
     setProp(s_p2, "side", "right"),
     setPropType(s_p2, "reltype", NOTYPE()),
-    setProp(s_p2, "derivationtype", "normal"),
+    setPropDeriv(s_p2, "derivationtype", NORMAL()),
     setPropStrat(s_p2, "calculationstrategy", INCREMENTAL()),
     
     !member[id1, (RICHTYPE(e2_type, m1, INCREMENTAL()), PROPS(s_p1))] in s_r1,
@@ -189,7 +189,7 @@ rules // models
     setProp(s_p1, "inverse", id2),
     setProp(s_p1, "side", "left"),
     setPropType(s_p1, "reltype", NOTYPE()),
-    setProp(s_p1, "derivationtype", "derivation"),
+    setPropDeriv(s_p1, "derivationtype", DERIVATION()),
     setPropStrat(s_p1, "calculationstrategy", strat),
     setPropInlining(s_p1, "inlining", NOT_INLINE()),
     
@@ -198,7 +198,7 @@ rules // models
     setProp(s_p2, "inverse", id1),
     setProp(s_p2, "side", "right"),
     setPropType(s_p2, "reltype", NOTYPE()),
-    setProp(s_p2, "derivationtype", "normal"),
+    setPropDeriv(s_p2, "derivationtype", DERIVATION()),
     setPropStrat(s_p2, "calculationstrategy", strat),
     setPropInlining(s_p2, "inlining", NOT_INLINE()),
     
@@ -226,7 +226,7 @@ rules // models
     
     new s_p,
     setProp(s_p, "ns", "attribute"),
-    setProp(s_p, "derivationtype", "derivation"),
+    setPropDeriv(s_p, "derivationtype", DERIVATION()),
     setPropExp(s_p, "expr", exp),
     setPropType(s_p, "reltype", NOTYPE()),
     setProp(s_p, "side", "none"),
@@ -235,13 +235,14 @@ rules // models
     
     !member[id, (RICHTYPE(d_type, d_mult, d_strat), PROPS(s_p))] in s,
     assertMemberDeclarationUnique(s, id),
-    assertMemberOverrideOk(INLINE(), s, id),
+    assertMemberOverrideOk(INLINE(), DERIVATION(), s, id),
     
     @id.type := RICHTYPE(d_type, d_mult, d_strat),
     @exp.type := RICHTYPE(e_type, e_mult, e_strat).
   
   memberOk(_, s, DerivationAttribute(id, type, mult, exp, strat)) :-
-  { declared decl_richtype e_type e_mult e_strat d_type d_mult d_strat rid s_p }
+  { declared decl_richtype e_type e_mult e_strat d_type d_mult d_strat rid s_p
+  	overridden_type member_type overridden_mult member_mult overridden_strat member_strat }
     RICHTYPE(e_type, e_mult, e_strat) == richTypeOfExp(s, exp),
 
     d_type == typeOfAnyType(s, type),
@@ -254,7 +255,7 @@ rules // models
     
     new s_p,
     setProp(s_p, "ns", "attribute"),
-    setProp(s_p, "derivationtype", "derivation"),
+    setPropDeriv(s_p, "derivationtype", DERIVATION()),
     setPropExp(s_p, "expr", exp),
     setPropType(s_p, "reltype", NOTYPE()),
     setProp(s_p, "side", "none"),
@@ -263,13 +264,26 @@ rules // models
     
     !member[id, (RICHTYPE(d_type, d_mult, d_strat), PROPS(s_p))] in s,
     assertMemberDeclarationUnique(s, id),
-    assertMemberOverrideOk(NOT_INLINE(), s, id),
+    assertMemberOverrideOk(NOT_INLINE(), DERIVATION(), s, id),
+    
+//    (_, RICHTYPE(member_type, _, _)) == resolveMember(s, id),
+//    overridden_type == overriddenMemberType(s, id, member_type) | error $[overriding type error]@type,
+//    equitype(overridden_type, d_type),
+    
+    (_, RICHTYPE(_, member_mult, _)) == resolveMember(s, id),
+    overridden_mult == overriddenMemberMult(s, id, member_mult) | error $[overriding multiplicity error]@mult,
+    equimult(overridden_mult, d_mult),
+    
+//    (_, RICHTYPE(_, _, member_strat)) == resolveMember(s, id),
+//    overridden_strat == overriddenMemberStrat(s, id, member_strat) | error $[overriding strategy error]@strat,
+//    equistrat(overridden_strat, d_strat),
     
     @id.type := RICHTYPE(d_type, d_mult, d_strat),
     @exp.type := RICHTYPE(e_type, e_mult, e_strat).
     
   memberOk(_, s, DefaultAttribute(id, type, mult, exp, strat)) :-
-  { declared decl_richtype e_type e_mult e_strat d_type d_mult d_strat rid s_p }
+  { declared decl_richtype e_type e_mult e_strat d_type d_mult d_strat rid s_p
+  	overridden_type member_type overridden_mult member_mult overridden_strat member_strat }
     RICHTYPE(e_type, e_mult, e_strat) == richTypeOfExp(s, exp),
 
     d_type == typeOfPrimitiveType(type),
@@ -282,7 +296,7 @@ rules // models
     
     new s_p,
     setProp(s_p, "ns", "attribute"),
-    setProp(s_p, "derivationtype", "default_value"),
+    setPropDeriv(s_p, "derivationtype", DEFAULT_VALUE()),
     setPropExp(s_p, "expr", exp),
     setPropType(s_p, "reltype", NOTYPE()),
     setProp(s_p, "side", "none"),
@@ -291,7 +305,19 @@ rules // models
     
     !member[id, (RICHTYPE(d_type, d_mult, d_strat), PROPS(s_p))] in s,
     assertMemberDeclarationUnique(s, id),
-    assertMemberOverrideOk(NOT_INLINE(), s, id),
+    assertMemberOverrideOk(NOT_INLINE(), DEFAULT_VALUE(), s, id),
+    
+    (_, RICHTYPE(member_type, _, _)) == resolveMember(s, id),
+    overridden_type == overriddenMemberType(s, id, member_type) | error $[overriding type error]@type,
+    equitype(overridden_type, d_type),
+    
+    (_, RICHTYPE(_, member_mult, _)) == resolveMember(s, id),
+    overridden_mult == overriddenMemberMult(s, id, member_mult) | error $[overriding multiplicity error]@mult,
+    equimult(overridden_mult, d_mult),
+    
+    (_, RICHTYPE(_, _, member_strat)) == resolveMember(s, id),
+    overridden_strat == overriddenMemberStrat(s, id, member_strat) | error $[overriding strategy error]@strat,
+    equistrat(overridden_strat, d_strat),
     
     @id.type := RICHTYPE(d_type, d_mult, d_strat),
     @exp.type := RICHTYPE(e_type, e_mult, e_strat).
@@ -304,10 +330,11 @@ rules // models
     d_strat == INCREMENTAL(),
     
     new s_p,
+    setPropDeriv(s_p, "derivationtype", NORMAL()),
     setPropInlining(s_p, "inlining", NOT_INLINE()),
     !member[id, (RICHTYPE(d_type, d_mult, d_strat), PROPS(s_p))] in s,
     assertMemberDeclarationUnique(s, id),
-    assertMemberOverrideOk(NOT_INLINE(), s, id),
+    assertMemberOverrideOk(NOT_INLINE(), NORMAL(), s, id),
     
     (_, RICHTYPE(member_type, _, _)) == resolveMember(s, id),
     overridden_type == overriddenMemberType(s, id, member_type) | error $[overriding type error]@type,
@@ -316,17 +343,12 @@ rules // models
     (_, RICHTYPE(_, member_mult, _)) == resolveMember(s, id),
     overridden_mult == overriddenMemberMult(s, id, member_mult) | error $[overriding multiplicity error]@mult,
     equimult(overridden_mult, d_mult),
-    
-//    o_type == overriddenMemberType(s, (id, this_member)),
-//    assertOverriddenMemberTypeEqual(s, id, d_type) | error $[overriding type error: expected [o_type] got [d_type]]@type,
-    
-//    o_mult == overriddenMemberMult(s, (id, this_member)),
-//    assertOverriddenMemberMultEqual(s, (id, this_member)) | error $[overriding multiplicity error: expected [o_mult] got [d_mult]]@mult,
-    
+ 
     @id.type := RICHTYPE(d_type, d_mult, d_strat).
   
   memberOk(_, s, AbstractAttribute(id, type, mult, strat)) :-
-  { declared decl_richtype d_type d_mult d_strat rid s_p }
+  { declared decl_richtype d_type d_mult d_strat rid s_p
+  	overridden_type member_type overridden_mult member_mult }
 
     d_type == typeOfPrimitiveType(type),
     d_mult == multOfMultList(mult),
@@ -334,7 +356,7 @@ rules // models
 
     new s_p,
     setProp(s_p, "ns", "attribute"),
-    setProp(s_p, "derivationtype", "abstract"),
+    setPropDeriv(s_p, "derivationtype", ABSTRACT()),
     setProp(s_p, "reltype", "none"),
     setPropType(s_p, "side", NOTYPE()),
     setPropStrat(s_p, "calculationstrategy", d_strat),
@@ -342,7 +364,15 @@ rules // models
     
     !member[id, (RICHTYPE(d_type, d_mult, d_strat), PROPS(s_p))] in s,
     assertMemberDeclarationUnique(s, id),
-    assertMemberOverrideOk(NOT_INLINE(), s, id),
+    assertMemberOverrideOk(NOT_INLINE(), ABSTRACT(), s, id),
+    
+    (_, RICHTYPE(member_type, _, _)) == resolveMember(s, id),
+    overridden_type == overriddenMemberType(s, id, member_type) | error $[overriding type error]@type,
+    equitype(overridden_type, d_type),
+    
+    (_, RICHTYPE(_, member_mult, _)) == resolveMember(s, id),
+    overridden_mult == overriddenMemberMult(s, id, member_mult) | error $[overriding multiplicity error]@mult,
+    equimult(overridden_mult, d_mult),
     
     @id.type := RICHTYPE(d_type, d_mult, d_strat).
     

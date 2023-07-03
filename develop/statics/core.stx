@@ -298,6 +298,9 @@ rules // strategy lattice
   // reflexive
   strat(S, S).
   
+  equistrat : STRAT * STRAT
+  equistrat(S, S).
+  
   stratLub : STRAT * STRAT -> STRAT
   
   // root
@@ -344,16 +347,19 @@ rules // derivation type lattice
   deriv : DERIV * DERIV
   deriv(DEFAULT_VALUE(), NORMAL()).
   deriv(DEFAULT_VALUE(), DERIVATION()).
+  deriv(DEFAULT_VALUE(), ABSTRACT()).
   deriv(NORMAL(), ABSTRACT()).
   deriv(DERIVATION(), ABSTRACT()).
-  deriv(D1, D2) :- { X } deriv(D1, X), deriv(X, D2).
   deriv(D, D).
   
   derivLub : DERIV * DERIV -> DERIV
   derivLub(D, D) = D.
-  derivLub(D1, D2) = X :-
-    deriv(D1, X),
-    deriv(D2, X).
+  derivLub(DEFAULT_VALUE(), X) = X.
+  derivLub(X, DEFAULT_VALUE()) = X.
+  derivLub(ABSTRACT(), X) = ABSTRACT().
+  derivLub(X, ABSTRACT()) = ABSTRACT().
+  derivLub(NORMAL(), DERIVATION()) = ABSTRACT().
+  derivLub(DERIVATION(), NORMAL()) = ABSTRACT().
   
 rules // types
 
@@ -523,17 +529,20 @@ rules // name resolution
         min and true
         in s |-> ps.
      
-  assertMemberOverrideOk : INLINING * scope * ID
-  assertMemberOverrideOk(own_inlining, s, id) :- { overridden_members }
+  assertMemberOverrideOk : INLINING * DERIV * scope * ID
+  assertMemberOverrideOk(own_inlining, own_deriv, s, id) :- { overridden_members }
   	overridden_members == resolveOverriddenMembers(s, id),
-  	assertOverriddenMembersOk(own_inlining, id, overridden_members).
+  	assertOverriddenMembersOk(own_inlining, own_deriv, id, overridden_members).
   	
-  assertOverriddenMembersOk : INLINING * ID * list((path * (ID * (RICHTYPE * PROPS))))
-  assertOverriddenMembersOk(_, _, []).
-  assertOverriddenMembersOk(own_inlining, id, [(_, (decl_id, (_, props@PROPS(s_props))))]) :-
+  assertOverriddenMembersOk : INLINING * DERIV * ID * list((path * (ID * (RICHTYPE * PROPS))))
+  assertOverriddenMembersOk(_, _, _, []).
+  assertOverriddenMembersOk(own_inlining, own_deriv, id, [(_, (decl_id, (_, props@PROPS(s_props))))]) :-
+  	{ overridden_deriv }
   	@id.ref := decl_id,
   	own_inlining != INLINE() | error $[cannot override [decl_id] with inline attribute]@id,
-  	PROPVAL_INLINING(NOT_INLINE()) == getProp(props, "inlining") | error $[cannot override inline attribute [decl_id]]@id.
+  	PROPVAL_INLINING(NOT_INLINE()) == getProp(props, "inlining") | error $[cannot override inline attribute [decl_id]]@id,
+  	PROPVAL_DERIV(overridden_deriv) == getProp(props, "derivationtype"),
+  	deriv(own_deriv, overridden_deriv) | error $[overriding derivation type error]@id.
   	
 //  overriddenMemberMult : scope * (ID * (RICHTYPE * PROPS)) -> MULT
 //  overriddenMemberMult(s, this_member) = overridden_mult :-
@@ -559,6 +568,14 @@ rules // name resolution
   overriddenMemberMultFromList : MULT * list((path * (ID * (RICHTYPE * PROPS)))) -> MULT
   overriddenMemberMultFromList(this_mult, []) = this_mult.
   overriddenMemberMultFromList(_, [(_, (_, (RICHTYPE(_, overridden_mult, _), _)))]) = overridden_mult.
+  
+  overriddenMemberStrat : scope * ID * STRAT -> STRAT
+  overriddenMemberStrat(s, id, strat) = result :- { overridden_members }
+  	overridden_members == resolveOverriddenMembers(s, id),
+  	result == overriddenMemberStratFromList(strat, overridden_members).
+  overriddenMemberStratFromList : STRAT * list((path * (ID * (RICHTYPE * PROPS)))) -> STRAT
+  overriddenMemberStratFromList(this_strat, []) = this_strat.
+  overriddenMemberStratFromList(_, [(_, (_, (RICHTYPE(_, _, overridden_strat), _)))]) = overridden_strat.
 
   assertOverriddenMemberTypeEqual : scope * ID * TYPE
   assertOverriddenMemberTypeEqual(s, id, type) :- { overridden_members }
@@ -686,7 +703,7 @@ rules // name resolution
   subtypeEntity(ENTITY(_, s_entity), ENTITY(_, s_super)) :- {results}
   	query ()
   		filter INHERIT+ and true
-  		min and true
+  		min $ < INHERIT and true
   		in s_entity |-> results,
   	includesScope(results, s_super).
   	
@@ -694,7 +711,7 @@ rules // name resolution
   superScopes(s) = results :-
   	query ()
   		filter INHERIT+ and true
-  		min and true
+  		min $ < INHERIT and true
   		in s |-> results.
   
   intersection: list((path * scope)) * list((path * scope)) -> list(scope)
@@ -780,6 +797,10 @@ rules // props
   setPropInlining: scope * string * INLINING
   setPropInlining(s, key, inlining) :-
     !prop[key, PROPVAL_INLINING(inlining)] in s.
+    
+  setPropDeriv: scope * string * DERIV
+  setPropDeriv(s, key, deriv) :-
+    !prop[key, PROPVAL_DERIV(deriv)] in s.
     
   setPropType: scope * string * TYPE
   setPropType(s, key, type) :-
