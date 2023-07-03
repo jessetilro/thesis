@@ -108,6 +108,9 @@ rules // multiplicity/ordering lattice
   // reflexive
   mult(M, M).
   
+  equimult : MULT * MULT
+  equimult(X, X).
+  
   multLub : MULT * MULT -> MULT
   
   multLub(X, X) = X.
@@ -548,6 +551,14 @@ rules // name resolution
   overriddenMemberTypeFromList : TYPE * list((path * (ID * (RICHTYPE * PROPS)))) -> TYPE
   overriddenMemberTypeFromList(this_type, []) = this_type.
   overriddenMemberTypeFromList(_, [(_, (_, (RICHTYPE(overridden_type, _, _), _)))]) = overridden_type.
+
+  overriddenMemberMult : scope * ID * MULT -> MULT
+  overriddenMemberMult(s, id, mult) = result :- { overridden_members }
+  	overridden_members == resolveOverriddenMembers(s, id),
+  	result == overriddenMemberMultFromList(mult, overridden_members).
+  overriddenMemberMultFromList : MULT * list((path * (ID * (RICHTYPE * PROPS)))) -> MULT
+  overriddenMemberMultFromList(this_mult, []) = this_mult.
+  overriddenMemberMultFromList(_, [(_, (_, (RICHTYPE(_, overridden_mult, _), _)))]) = overridden_mult.
 
   assertOverriddenMemberTypeEqual : scope * ID * TYPE
   assertOverriddenMemberTypeEqual(s, id, type) :- { overridden_members }

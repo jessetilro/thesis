@@ -298,7 +298,7 @@ rules // models
     
   memberOk(_, s, Attribute(id, type, mult)) :-
   { declared decl_richtype e_type e_mult e_strat d_type d_mult d_strat rid s_p
-  	overridden_type member_type }
+  	overridden_type member_type overridden_mult member_mult }
     d_type == typeOfPrimitiveType(type),
     d_mult == multOfMultList(mult),
     d_strat == INCREMENTAL(),
@@ -312,6 +312,10 @@ rules // models
     (_, RICHTYPE(member_type, _, _)) == resolveMember(s, id),
     overridden_type == overriddenMemberType(s, id, member_type) | error $[overriding type error]@type,
     equitype(overridden_type, d_type),
+    
+    (_, RICHTYPE(_, member_mult, _)) == resolveMember(s, id),
+    overridden_mult == overriddenMemberMult(s, id, member_mult) | error $[overriding multiplicity error]@mult,
+    equimult(overridden_mult, d_mult),
     
 //    o_type == overriddenMemberType(s, (id, this_member)),
 //    assertOverriddenMemberTypeEqual(s, id, d_type) | error $[overriding type error: expected [o_type] got [d_type]]@type,
