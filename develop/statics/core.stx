@@ -527,22 +527,56 @@ rules // name resolution
   	
   assertOverriddenMembersOk : INLINING * ID * list((path * (ID * (RICHTYPE * PROPS))))
   assertOverriddenMembersOk(_, _, []).
-  assertOverriddenMembersOk(own_inlining, id, [(_, (decl_id, (_, props@PROPS(s_props))))|_]) :-
+  assertOverriddenMembersOk(own_inlining, id, [(_, (decl_id, (_, props@PROPS(s_props))))]) :-
+  	@id.ref := decl_id,
   	own_inlining != INLINE() | error $[cannot override [decl_id] with inline attribute]@id,
   	PROPVAL_INLINING(NOT_INLINE()) == getProp(props, "inlining") | error $[cannot override inline attribute [decl_id]]@id.
+  	
+//  overriddenMemberMult : scope * (ID * (RICHTYPE * PROPS)) -> MULT
+//  overriddenMemberMult(s, this_member) = overridden_mult :-
+//  	(_, (RICHTYPE(_, overridden_mult, _), _)) ==
+//    	resolveOverriddenMember(s, this_member).
+//  assertOverriddenMemberMultEqual : scope * (ID * (RICHTYPE * PROPS))
+//  assertOverriddenMemberMultEqual(s, this_member@(_, (RICHTYPE(_, this_mult, _), _))) :-
+//  	(_, (RICHTYPE(_, this_mult, _), _)) ==
+//    	resolveOverriddenMember(s, this_member).
+  
+  overriddenMemberType : scope * ID * TYPE -> TYPE
+  overriddenMemberType(s, id, type) = result :- { overridden_members }
+  	overridden_members == resolveOverriddenMembers(s, id),
+  	result == overriddenMemberTypeFromList(type, overridden_members).
+  overriddenMemberTypeFromList : TYPE * list((path * (ID * (RICHTYPE * PROPS)))) -> TYPE
+  overriddenMemberTypeFromList(this_type, []) = this_type.
+  overriddenMemberTypeFromList(_, [(_, (_, (RICHTYPE(overridden_type, _, _), _)))]) = overridden_type.
+
+  assertOverriddenMemberTypeEqual : scope * ID * TYPE
+  assertOverriddenMemberTypeEqual(s, id, type) :- { overridden_members }
+  	type == overriddenMemberType(s, id, type).
+  assertOverriddenMemberTypeEqualFromList : TYPE * list((path * (ID * (RICHTYPE * PROPS))))
+  assertOverriddenMemberTypeEqualFromList(_, []).
+  assertOverriddenMemberTypeEqualFromList(this_type, [(_, (_, (RICHTYPE(this_type, _, _), _)))]).
+  	
+  resolveOverriddenMember : scope * ID -> list((ID * (RICHTYPE * PROPS)))
+  resolveOverriddenMember(s, id) = result :- { overridden_members }
+  	overridden_members == resolveOverriddenMembers(s, id),
+  	result == overriddenMemberFromList(overridden_members).
+  
+  overriddenMemberFromList : list((path * (ID * (RICHTYPE * PROPS)))) -> list((ID * (RICHTYPE * PROPS)))
+  overriddenMemberFromList([]) = [].
+  overriddenMemberFromList([(_, overridden_member)|_]) = [overridden_member].
      
   resolveOverriddenMembers : scope * ID -> list((path * (ID * (RICHTYPE * PROPS))))
   resolveOverriddenMembers(s, ref_id) = result :-
     query member
       filter PARENT* EXTEND? INHERIT+ EXTEND? and { x' :- x' == ref_id }
-        min $ < EXTEND, EXTEND < INHERIT and true
+        min $ < EXTEND, $ < INHERIT, EXTEND < INHERIT and true
         in s |-> result.
      
   resolveMember : scope * ID -> (ID * RICHTYPE) 
   resolveMember(s, ref_id) = (decl_id, richtype) :-
     query member
       filter PARENT* EXTEND? INHERIT* EXTEND? and { x' :- x' == ref_id }
-        min $ < EXTEND, EXTEND < INHERIT and true
+        min $ < EXTEND, $ < INHERIT, EXTEND < INHERIT and true
         in s |-> [(_, (decl_id, (richtype, _)))|_].
        
   resolveMemberWithProps : scope * ID -> (ID * RICHTYPE * PROPS) 

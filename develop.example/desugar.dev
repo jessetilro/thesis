@@ -1,17 +1,26 @@
 module test
 model
 
-  entity Assignment {
-  	x : Boolean
-  	y : Boolean = this.x <+ true
+  entity HasGrade {
+    grade : Float?
+  }
+
+  entity Assignment extends HasGrade {
+    grade : Float?
   }
   
   entity LeafAssignment extends Assignment {
+    grade : Float?
   }
   
   entity CollectionAssignment extends Assignment {
+    grade : Float? = avg(children.grade)
   }
   
   relation CollectionAssignment.children * <-> ? Assignment.parent
   
-  relation Assignment.root ? = this <-> Assignment
+  entity Foo {
+    grade : Float? = avg((collections ++ leaves).grade)
+  }
+  relation Foo.collections <-> CollectionAssignment.foos
+  relation Foo.leaves      <-> LeafAssignment.foos
