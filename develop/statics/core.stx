@@ -350,7 +350,10 @@ rules // derivation type lattice
   deriv(DEFAULT_VALUE(), ABSTRACT()).
   deriv(NORMAL(), ABSTRACT()).
   deriv(DERIVATION(), ABSTRACT()).
-  deriv(D, D).
+  deriv(DEFAULT_VALUE(), DEFAULT_VALUE()).
+  deriv(DERIVATION(), DERIVATION()).
+  deriv(NORMAL(), NORMAL()).
+  deriv(ABSTRACT(), ABSTRACT()).
   
   derivLub : DERIV * DERIV -> DERIV
   derivLub(D, D) = D.
@@ -530,12 +533,14 @@ rules // name resolution
         in s |-> ps.
      
   assertMemberOverrideOk : INLINING * DERIV * scope * ID
+  assertMemberOverrideOk(NOT_INLINE(), DEFAULT_VALUE(), _, _).
   assertMemberOverrideOk(own_inlining, own_deriv, s, id) :- { overridden_members }
   	overridden_members == resolveOverriddenMembers(s, id),
   	assertOverriddenMembersOk(own_inlining, own_deriv, id, overridden_members).
   	
   assertOverriddenMembersOk : INLINING * DERIV * ID * list((path * (ID * (RICHTYPE * PROPS))))
   assertOverriddenMembersOk(_, _, _, []).
+  assertOverriddenMembersOk(NOT_INLINE(), DEFAULT_VALUE(), _, [(_, (decl_id, (_, props@PROPS(s_props))))]).
   assertOverriddenMembersOk(own_inlining, own_deriv, id, [(_, (decl_id, (_, props@PROPS(s_props))))]) :-
   	{ overridden_deriv }
   	@id.ref := decl_id,
@@ -703,7 +708,7 @@ rules // name resolution
   subtypeEntity(ENTITY(_, s_entity), ENTITY(_, s_super)) :- {results}
   	query ()
   		filter INHERIT+ and true
-  		min $ < INHERIT and true
+  		min and true
   		in s_entity |-> results,
   	includesScope(results, s_super).
   	

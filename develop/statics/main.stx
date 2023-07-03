@@ -309,15 +309,15 @@ rules // models
     
     (_, RICHTYPE(member_type, _, _)) == resolveMember(s, id),
     overridden_type == overriddenMemberType(s, id, member_type) | error $[overriding type error]@type,
-    equitype(overridden_type, d_type),
+    subtype(overridden_type, d_type),
     
     (_, RICHTYPE(_, member_mult, _)) == resolveMember(s, id),
     overridden_mult == overriddenMemberMult(s, id, member_mult) | error $[overriding multiplicity error]@mult,
-    equimult(overridden_mult, d_mult),
+    mult(overridden_mult, d_mult),
     
     (_, RICHTYPE(_, _, member_strat)) == resolveMember(s, id),
     overridden_strat == overriddenMemberStrat(s, id, member_strat) | error $[overriding strategy error]@strat,
-    equistrat(overridden_strat, d_strat),
+    strat(overridden_strat, d_strat),
     
     @id.type := RICHTYPE(d_type, d_mult, d_strat),
     @exp.type := RICHTYPE(e_type, e_mult, e_strat).
