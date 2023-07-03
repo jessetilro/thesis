@@ -9,9 +9,10 @@ rules
     t_type == typeOfPrimitiveType(t),
     cast(t_type, e_type) | error $[cannot cast a [e_type] to a [t_type]]@e.
     
-  richTypeOfExp(s, FilterType(e1, t)) = RICHTYPE(t_type, out_mult, e_strat) :-
+  richTypeOfExp(s, FilterType(e1, t)) = RICHTYPE(t_type, out_mult, e_strat) :- { entity_decl_id }
   { e_type e_mult }
     richTypeOfExp(s, e1) == RICHTYPE(e_type, e_mult, e_strat),
-    t_type == typeOfEntityType(s, t),
+    t_type@ENTITY(entity_decl_id, _) == typeOfEntityType(s, t),
+    @t.ref := entity_decl_id,
     subtype(t_type, e_type) | error $[[t_type] is not a subtype of [e_type]]@t,
     out_mult == lowerboundZero(e_mult).

@@ -8,6 +8,17 @@ imports
   analysis
   build
   desugaring/desugar
+  
+  api/config-api
+  api/functions-api
+  api/model-api
+  api/module-api
+  api/data-api
+  lib/origin
+  lib/new-name
+  lib/string
+  lib/traverse
+  lib/lists-tuples
 
 rules // Debugging
   
@@ -28,4 +39,27 @@ rules // Debugging
     with
       	filename := <guarantee-extension(|"aterm")> path;
       	
-		result   := <filter(not(?None()));string-sort>["b", None(), "a"]
+      	entity := FirstClassRelation(
+          "IssueProject"
+        , None()
+        , None()
+        , [ Role("Issue", Some("issueProject"), Some(One()), Some("issue"))
+          , Role("Project", Some("issueProject"), Some(ZeroOrMore()), Some("project"))
+          ]
+        );
+      	
+		result   := <wrap-some> "test"
+		
+	entity-generate-shortcuts2: e -> result
+    where
+      is-entity
+    with
+      members       := <entity-get-members>e;
+      roles         := <filter(role-get-name);filter(not(?None()));map(keep-origin(extract-some));keep-origin(string-sort)>members;
+      shortcuts     := <filter(shortcut-get-roles-ordered)>members;
+      shortcuts-all := <join-half>roles;
+      shortcuts-add := <diff>(shortcuts-all, shortcuts);
+      members-new   := <map(create-shortcut-with-same-name)>shortcuts-add;
+      members'      := <conc>(members,members-new);
+      members''     := <custom-origin(|members)>members';
+      result 		:= <entity-set-members(|members'')>e

@@ -15,5 +15,5 @@ language
   provider : target/metaborg/stratego.jar
   
 menus
-  menu: "Debugging"
+  menu: "Debugging" (openeditor)
     action: "Debug" = debug-strategy (source)

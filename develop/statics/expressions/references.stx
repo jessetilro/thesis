@@ -4,8 +4,9 @@ imports statics/core
 
 rules
 
-  richTypeOfExp(s, This()) = RICHTYPE(t, ONE(), INCREMENTAL()) :-
-    resolveThisType(s) == t.
+  richTypeOfExp(s, this@This()) = richtype :-
+    richtype == resolveThisRichtype(s),
+    @this.type := richtype.
     
   richTypeOfExp(s, Ref(r)) = RICHTYPE(d_type, d_mult, d_strat) :- { id }
     resolveMember(s, r) == (id, RICHTYPE(d_type, d_mult, d_strat)) | error $[reference [r] cannot be resolved]@r,

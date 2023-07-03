@@ -18,6 +18,13 @@ imports // functions
   lib/traverse
   lib/lists-tuples
   
+rules // helpers for extracting and wrapping terms of Option sort
+
+	extract-some: Some(x) -> x
+	extract-some: x -> x where not(?Some)
+	
+	wrap-some: x -> Some(x)
+  
 rules
   
   generate-omitted =
@@ -100,8 +107,8 @@ rules // relation fields
     try(rel-generate-mult1);
     try(rel-generate-mult2)
 
-  rel-generate-rel1a = relation-has-no-rel1 ; ?r; not(relation-has-no-rel2); relation-is-same-type; relation-set-rel1(<custom-origin(|<relation-get-type1>r)>$[[<relation-get-rel2>r]Inverse])
-  rel-generate-rel2a = relation-has-no-rel2 ; ?r; not(relation-has-no-rel1); relation-is-same-type; relation-set-rel2(<custom-origin(|<relation-get-type2>r)>$[[<relation-get-rel1>r]Inverse])
+  rel-generate-rel1a = relation-has-no-rel1 ; ?r; not(relation-has-no-rel2); relation-is-same-type; relation-set-rel1(<wrap-some;custom-origin(|<relation-get-type1>r)>$[[<relation-get-rel2;extract-some>r]Inverse])
+  rel-generate-rel2a = relation-has-no-rel2 ; ?r; not(relation-has-no-rel1); relation-is-same-type; relation-set-rel2(<wrap-some;custom-origin(|<relation-get-type2>r)>$[[<relation-get-rel1;extract-some>r]Inverse])
   rel-generate-rel1  = relation-has-no-rel1 ; ?r; relation-set-rel1 (<custom-origin(|<relation-get-type1>r)>$[[<relation-get-type2;lcfirst>r]])
   rel-generate-rel2  = relation-has-no-rel2 ; ?r; relation-set-rel2 (<custom-origin(|<relation-get-type2>r)>$[[<relation-get-type1;lcfirst>r]])
   rel-generate-mult1 = relation-has-no-mult1;     relation-set-mult1(!Some(ZeroOrMore()))
@@ -118,8 +125,8 @@ rules // shortcutrel fields
     try(shortcutrel-generate-mult1);
     try(shortcutrel-generate-mult2)
 
-  shortcutrel-generate-rel1a = shortcutrel-has-no-rel1 ; ?r; not(shortcutrel-has-no-rel2); shortcutrel-is-same-type; shortcutrel-set-rel1(<custom-origin(|<shortcutrel-get-type1>r)>$[[<shortcutrel-get-rel2>r]Inverse])
-  shortcutrel-generate-rel2a = shortcutrel-has-no-rel2 ; ?r; not(shortcutrel-has-no-rel1); shortcutrel-is-same-type; shortcutrel-set-rel2(<custom-origin(|<shortcutrel-get-type2>r)>$[[<shortcutrel-get-rel1>r]Inverse])
+  shortcutrel-generate-rel1a = shortcutrel-has-no-rel1 ; ?r; not(shortcutrel-has-no-rel2); shortcutrel-is-same-type; shortcutrel-set-rel1(<wrap-some;custom-origin(|<shortcutrel-get-type1>r)>$[[<shortcutrel-get-rel2;extract-some>r]Inverse])
+  shortcutrel-generate-rel2a = shortcutrel-has-no-rel2 ; ?r; not(shortcutrel-has-no-rel1); shortcutrel-is-same-type; shortcutrel-set-rel2(<wrap-some;custom-origin(|<shortcutrel-get-type2>r)>$[[<shortcutrel-get-rel1;extract-some>r]Inverse])
   shortcutrel-generate-rel1  = shortcutrel-has-no-rel1 ; ?r; shortcutrel-set-rel1 (<custom-origin(|<shortcutrel-get-type1>r)>$[[<shortcutrel-get-type2;lcfirst>r]])
   shortcutrel-generate-rel2  = shortcutrel-has-no-rel2 ; ?r; shortcutrel-set-rel2 (<custom-origin(|<shortcutrel-get-type2>r)>$[[<shortcutrel-get-type1;lcfirst>r]])
   shortcutrel-generate-mult1 = shortcutrel-has-no-mult1;     shortcutrel-set-mult1(!Some(ZeroOrMore()))
@@ -153,8 +160,6 @@ rules // roles -> inv (context sensitive)
     
   entity-duplicate-role-types = entity-get-members;filter(is-role);map(role-get-type);list-duplicates;make-set
 
-	extract-some: Some(x) -> x
-	extract-some: x -> x where not(?Some)
 rules  // eiNames (context sensitive)
 
   datadef-generate-entity-names: d -> <datadef-set-data(|c'')>d
@@ -179,7 +184,7 @@ rules // shortcuts (context sensitive)
       is-entity
     with
       members       := <entity-get-members>e;
-      roles         := <filter(role-get-name);filter(not(?None()));filter(keep-origin(Some(?x);!x));keep-origin(string-sort)>members;
+      roles         := <filter(role-get-name);filter(not(?None()));map(keep-origin(extract-some));keep-origin(string-sort)>members;
       shortcuts     := <filter(shortcut-get-roles-ordered)>members;
       shortcuts-all := <join-half>roles;
       shortcuts-add := <diff>(shortcuts-all, shortcuts);
@@ -196,7 +201,7 @@ rules // shortcuts (context sensitive)
       
   pair-with(|h): t -> (h,t)
 
-  create-shortcut-with-same-name: (role1,role2) -> Shortcut(role1, role2, role2, role1)
+  create-shortcut-with-same-name: (role1,role2) -> Shortcut(role1, Some(role2), role2, Some(role1))
 
 rules // shortcutrels -> shortcut relations 
 

@@ -71,12 +71,20 @@ rules // models
   
   modelOk : scope * Model
   
-  modelOk(s, Entity(id, optional_extends, _, members)) :- { s_model s_resolve rtype s_parent parent_decl_id }
+  modelOk(s, Entity(id, optional_extends, strat, members)) :-
+  	{ s_model s_resolve rtype s_parent parent_decl_id
+  	  this_type this_mult this_strat
+  	  entity_type }
   	// declaration
     new s_model, s_model -PARENT-> s,
     declareEntity(s, id, s_model),
-    resolveEntity(s_model, id) == (_, ENTITY(_, s_resolve)) | error $[duplicate definition of entity [id]]@id,
-    @id.type := ENTITY(_, s_resolve),
+    resolveEntity(s_model, id) == (_, entity_type@ENTITY(_, s_resolve)) | error $[duplicate definition of entity [id]]@id,
+    // this binding
+    this_type == entity_type,
+    this_mult == ONE(),
+    this_strat == stratOfStratList(strat),
+    @id.type := this_type,
+    declareThisRichtype(s_model, RICHTYPE(this_type, this_mult, this_strat)),
     // extension
     extendScopes(resolveEntityExtensions(s, id), s_model),
     // inheritance
@@ -90,21 +98,26 @@ rules // models
     new s_model, s_model -PARENT-> s,
     declareEntity(s, id, s_model),
     resolveEntity(s_model, id) == (_, ENTITY(_, s_resolve)) | error $[duplicate definition of entity [id]]@id,
+    // this binding
     this_type == ENTITY(_, s_resolve),
     this_mult == ONE(),
     this_strat == stratOfStratList(strat),
     @id.type := this_type,
+    declareThisRichtype(s_model, RICHTYPE(this_type, this_mult, this_strat)),
     // extension
     extendScopes(resolveEntityExtensions(s, id), s_model),
-    // this binding
-    declareThisRichtype(s_model, RICHTYPE(this_type, this_mult, this_strat)),
     // members
     membersOk(s, s_model, members).
     
   modelOk(s, Relation(e1, r1, m1_optional, m2_optional, e2, r2)) :-
-    { s_e1 s_e2 s_r1 s_r2 m1 m2 id1 id2 s_p1 s_p2 }
-    (_, ENTITY(_, s_e1)) == resolveEntity(s, e1) | error $[entity [e1] is not declared],
-    (_, ENTITY(_, s_e2)) == resolveEntity(s, e2) | error $[entity [e2] is not declared],
+    { s_e1 s_e2 s_r1 s_r2 m1 m2 id1 id2 s_p1 s_p2
+      e1_type e2_type e1_decl_id e2_decl_id }
+    (e1_decl_id, e1_type@ENTITY(_, s_e1)) == resolveEntity(s, e1) | error $[entity [e1] is not declared],
+    @e1.type := e1_type,
+    @e1.ref := e1_decl_id,
+    (e2_decl_id, e2_type@ENTITY(_, s_e2)) == resolveEntity(s, e2) | error $[entity [e2] is not declared],
+    @e2.type := e2_type,
+    @e2.ref := e2_decl_id,
     m1 == multOfSpaceMultList(m1_optional),
     m2 == multOfSpaceMultList(m2_optional),
     r1 == [ID2DotID(id1)],
@@ -134,18 +147,23 @@ rules // models
     setProp(s_p2, "derivationtype", "normal"),
     setPropStrat(s_p2, "calculationstrategy", INCREMENTAL()),
     
-    !member[id1, (RICHTYPE(ENTITY(_, s_e2), m1, INCREMENTAL()), PROPS(s_p1))] in s_r1,
+    !member[id1, (RICHTYPE(e2_type, m1, INCREMENTAL()), PROPS(s_p1))] in s_r1,
     assertMemberDeclarationUnique(s_r1, id1),
     !entity_extension[e1, s_r1] in s,
     
-    !member[id2, (RICHTYPE(ENTITY(_, s_e1), m2, INCREMENTAL()), PROPS(s_p2))] in s_r2,
+    !member[id2, (RICHTYPE(e1_type, m2, INCREMENTAL()), PROPS(s_p2))] in s_r2,
     assertMemberDeclarationUnique(s_r2, id2),
     !entity_extension[e2, s_r2] in s.
    
   modelOk(s, RelationDerived(e1, r1, m1_optional, expr, m2_optional, e2, r2, str)) :-
-    { e1_type e2_type s_e1 s_e2 s_r1 s_r2 m1 m2 id1 id2 s_p1 s_p2 strat expr_type expr_entity expr_mult expr_strat }
-    (_, e1_type@ENTITY(_, s_e1)) == resolveEntity(s, e1) | error $[entity [e1] is not declared],
-    (_, e2_type@ENTITY(_, s_e2)) == resolveEntity(s, e2) | error $[entity [e2] is not declared],
+    { e1_type e2_type s_e1 s_e2 s_r1 s_r2 m1 m2 id1 id2 s_p1 s_p2 strat expr_type expr_entity expr_mult expr_strat
+      e1_decl_id e2_decl_id}
+    (e1_decl_id, e1_type@ENTITY(_, s_e1)) == resolveEntity(s, e1) | error $[entity [e1] is not declared],
+    @e1.type := e1_type,
+    @e1.ref := e1_decl_id,
+    (e2_decl_id, e2_type@ENTITY(_, s_e2)) == resolveEntity(s, e2) | error $[entity [e2] is not declared],
+    @e2.type := e2_type,
+    @e2.ref := e2_decl_id,
     m1 == multOfSpaceMultList(m1_optional),
     m2 == multOfSpaceMultList(m2_optional),
     r1 == [ID2DotID(id1)],
@@ -184,11 +202,11 @@ rules // models
     setPropStrat(s_p2, "calculationstrategy", strat),
     setPropInlining(s_p2, "inlining", NOT_INLINE()),
     
-    !member[id1, (RICHTYPE(ENTITY(_, s_e2), m1, INCREMENTAL()), PROPS(s_p1))] in s_r1,
+    !member[id1, (RICHTYPE(e2_type, m1, INCREMENTAL()), PROPS(s_p1))] in s_r1,
     assertMemberDeclarationUnique(s_r1, id1),
     !entity_extension[e1, s_r1] in s,
     
-    !member[id2, (RICHTYPE(ENTITY(_, s_e1), m2, INCREMENTAL()), PROPS(s_p2))] in s_r2,
+    !member[id2, (RICHTYPE(e1_type, m2, INCREMENTAL()), PROPS(s_p2))] in s_r2,
     assertMemberDeclarationUnique(s_r2, id2),
     !entity_extension[e2, s_r2] in s.
     

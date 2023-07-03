@@ -591,7 +591,8 @@ rules // name resolution
   resolveThisRichtype : scope -> RICHTYPE
   resolveThisRichtype(s) = richtype :-
     query implicit
-      filter e and { x' :- x' == "this" }
+      filter EXTEND? and { x' :- x' == "this" }
+      	min $ < EXTEND and true
         in s |-> [(_, (_, (richtype, _)))|_].
         
   declareMembervalueType : scope * TYPE

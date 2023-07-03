@@ -1,17 +1,17 @@
- module test
- 
- model
- 
-  entity Course{}
-  entity Project{}
-  entity Issue{}
+module test
+model
 
-  relation IssueProject{
-    Issue 1
-    Project *
+  entity Assignment {
+  	x : Boolean
+  	y : Boolean = this.x <+ true
   }
   
-  relation ProjectIssue{
-    Issue 1
-    Project *
+  entity LeafAssignment extends Assignment {
   }
+  
+  entity CollectionAssignment extends Assignment {
+  }
+  
+  relation CollectionAssignment.children * <-> ? Assignment.parent
+  
+  relation Assignment.root ? = this <-> Assignment
