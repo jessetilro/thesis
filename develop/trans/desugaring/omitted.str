@@ -109,8 +109,8 @@ rules // relation fields
 
   rel-generate-rel1a = relation-has-no-rel1 ; ?r; not(relation-has-no-rel2); relation-is-same-type; relation-set-rel1(<wrap-some;custom-origin(|<relation-get-type1>r)>$[[<relation-get-rel2;extract-some>r]Inverse])
   rel-generate-rel2a = relation-has-no-rel2 ; ?r; not(relation-has-no-rel1); relation-is-same-type; relation-set-rel2(<wrap-some;custom-origin(|<relation-get-type2>r)>$[[<relation-get-rel1;extract-some>r]Inverse])
-  rel-generate-rel1  = relation-has-no-rel1 ; ?r; relation-set-rel1 (<custom-origin(|<relation-get-type1>r)>$[[<relation-get-type2;lcfirst>r]])
-  rel-generate-rel2  = relation-has-no-rel2 ; ?r; relation-set-rel2 (<custom-origin(|<relation-get-type2>r)>$[[<relation-get-type1;lcfirst>r]])
+  rel-generate-rel1  = relation-has-no-rel1 ; ?r; relation-set-rel1 (<wrap-some;custom-origin(|<relation-get-type1>r)>$[[<relation-get-type2;lcfirst>r]])
+  rel-generate-rel2  = relation-has-no-rel2 ; ?r; relation-set-rel2 (<wrap-some;custom-origin(|<relation-get-type2>r)>$[[<relation-get-type1;lcfirst>r]])
   rel-generate-mult1 = relation-has-no-mult1;     relation-set-mult1(!Some(ZeroOrMore()))
   rel-generate-mult2 = relation-has-no-mult2;     relation-set-mult2(!Some(ZeroOrMore()))
 
@@ -127,8 +127,8 @@ rules // shortcutrel fields
 
   shortcutrel-generate-rel1a = shortcutrel-has-no-rel1 ; ?r; not(shortcutrel-has-no-rel2); shortcutrel-is-same-type; shortcutrel-set-rel1(<wrap-some;custom-origin(|<shortcutrel-get-type1>r)>$[[<shortcutrel-get-rel2;extract-some>r]Inverse])
   shortcutrel-generate-rel2a = shortcutrel-has-no-rel2 ; ?r; not(shortcutrel-has-no-rel1); shortcutrel-is-same-type; shortcutrel-set-rel2(<wrap-some;custom-origin(|<shortcutrel-get-type2>r)>$[[<shortcutrel-get-rel1;extract-some>r]Inverse])
-  shortcutrel-generate-rel1  = shortcutrel-has-no-rel1 ; ?r; shortcutrel-set-rel1 (<custom-origin(|<shortcutrel-get-type1>r)>$[[<shortcutrel-get-type2;lcfirst>r]])
-  shortcutrel-generate-rel2  = shortcutrel-has-no-rel2 ; ?r; shortcutrel-set-rel2 (<custom-origin(|<shortcutrel-get-type2>r)>$[[<shortcutrel-get-type1;lcfirst>r]])
+  shortcutrel-generate-rel1  = shortcutrel-has-no-rel1 ; ?r; shortcutrel-set-rel1 (<wrap-some;custom-origin(|<shortcutrel-get-type1>r)>$[[<shortcutrel-get-type2;lcfirst>r]])
+  shortcutrel-generate-rel2  = shortcutrel-has-no-rel2 ; ?r; shortcutrel-set-rel2 (<wrap-some;custom-origin(|<shortcutrel-get-type2>r)>$[[<shortcutrel-get-type1;lcfirst>r]])
   shortcutrel-generate-mult1 = shortcutrel-has-no-mult1;     shortcutrel-set-mult1(!Some(ZeroOrMore()))
   shortcutrel-generate-mult2 = shortcutrel-has-no-mult2;     shortcutrel-set-mult2(!Some(ZeroOrMore()))
 
