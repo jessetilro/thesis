@@ -27,7 +27,7 @@ test Resolve to shortcut [[
     node1.[[parent]]
 ]] resolve #2 to #1
 
-test Resolve invalid role in shortcut fails [[
+test Resolve invalid role in shortcut fails (shortcut relation) [[
    model
   
     entity Node{

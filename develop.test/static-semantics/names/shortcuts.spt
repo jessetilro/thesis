@@ -51,7 +51,7 @@ test Resolve role in shortcut [[
   }
 ]] resolve #2 to #1
 
-test Resolve invalid role in shortcut fails [[
+test Resolve invalid role in shortcut fails (relation shortcut) [[
   entity Course{}
   entity Student{
   }

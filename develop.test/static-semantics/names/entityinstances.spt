@@ -23,7 +23,7 @@ test Resolve Identifier to entity [[
   [[u]]
 ]] resolve #2 to #1
 
-test Resolve invalid Identifier fails [[
+test Resolve invalid Identifier fails (entity instance) [[
   data
   u : User {}
   execute

@@ -21,7 +21,7 @@ test Resolve attribute from Identifier [[
   }
 ]] resolve #2 to #1
 
-test Resolve invalid Identifier fails [[
+test Resolve invalid Identifier fails (attribute) [[
   entity User {
     name : String = [[x]]
   }
