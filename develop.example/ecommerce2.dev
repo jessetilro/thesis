@@ -1,0 +1,37 @@
+module example
+
+model
+
+  entity Product {
+    sku : String
+    markup : Float
+    price : Float ? = sum(bundledProducts.price)
+    	<+ (bestSupply.price * (1.0 + (markup / 100.0))) (incremental)
+  }
+
+  relation Product.bundledProducts * <-> ? Product.bundle
+  relation Product.supplies * <-> 1 Supply.product
+  relation Product.lineItems * <-> 1 LineItem.product
+
+  entity Supply {
+    supplier : String
+    price : Float
+    inStock : Boolean
+  }
+
+  entity LineItem {
+    quantity : Int
+  }
+
+  entity Order {
+    number : String
+  }
+  
+  relation Product.bestSupply ? = supplies
+  		.filter(x => x.inStock)
+  		.find(x =>
+  			x.price == (
+  				min(supplies.filter(x => x.inStock).price) <+ 0.0
+			)
+		)
+  	<-> ? Supply.productAsBest (on-demand)
